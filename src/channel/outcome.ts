@@ -22,6 +22,7 @@
 
 import type { BookingOutcome } from '../orchestrator/orchestrator.js';
 import type { PolicyDecision, RuleId } from '../policy/types.js';
+import type { TripIntent } from '../agent/intent.js';
 
 const RULE_LABEL: Record<RuleId, string> = {
   cabin_class: 'cabin class',
@@ -84,6 +85,58 @@ function blockedText(decision: PolicyDecision, org: string): string {
  * after "book me a flight" is the worst possible behaviour: the traveller does not know
  * whether they have a seat, and does not know whether they have been charged.
  */
+/**
+ * Sent the moment the request is understood, before anything is searched.
+ *
+ * Not an approval request — searching and gating spend nothing and risk nothing, so
+ * asking permission to look is ceremony. This exists because the traveller has just
+ * messaged a number and would otherwise hear nothing for twenty seconds, and because
+ * restating the interpretation is how they catch a misread before it matters.
+ */
+export function composeAck(intent: TripIntent, opts: { org?: string } = {}): string {
+  const org = opts.org ? `${opts.org}'s` : 'your';
+  const lines = [
+    `Got it — ${intent.origin} to ${intent.destination}, ` +
+      `${plainDate(intent.departureDate)} to ${plainDate(intent.returnDate)}, ` +
+      `${intent.cabinClass.replace('_', ' ')}.`,
+  ];
+  if (intent.assumptions.length) lines.push(`You didn't say: ${intent.assumptions.join('; ')}.`);
+  lines.push(`Checking every fare against ${org} travel policy. Nothing is paid until you approve.`);
+  return lines.join('\n');
+}
+
+/**
+ * The one message that asks for something.
+ *
+ * It states the amount before the link, because the amount is what is being authorised
+ * and the traveller should know it before they tap rather than after. The link opens
+ * Visa's own hosted checkout, so approving is a passkey and nothing is typed.
+ */
+export function composeApproval(
+  offer: { carrier: { name: string }; totalAmount: string; currency: string },
+  url: string,
+  opts: { rules?: number } = {},
+): string {
+  return [
+    `${offer.carrier.name} — ${money(offer.totalAmount, offer.currency)}.`,
+    `Passes all ${opts.rules ?? 4} policy rules, and it's the cheapest fare that does.`,
+    '',
+    'Approve with your passkey:',
+    url,
+    '',
+    `Locked to this merchant and this exact amount. Expires in 15 minutes.`,
+  ].join('\n');
+}
+
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+/** "2026-09-15" -> "15 Sep". A traveller reads dates, not ISO strings. */
+function plainDate(iso: string): string {
+  const [, m, d] = iso.split('-');
+  const month = MONTHS[Number(m) - 1];
+  return month && d ? `${Number(d)} ${month}` : iso;
+}
+
 export function composeReply(outcome: BookingOutcome, opts: { org?: string } = {}): string {
   // The policy VERSION is an internal identifier. A traveller should be told whose rules
   // these are, not which revision of them.

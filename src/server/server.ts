@@ -15,7 +15,7 @@ import { spawn } from 'node:child_process';
 import { loadConfig, loadEnvFile } from '../config.js';
 import { createDemoChannel } from '../channel/demo.js';
 import { createLinqChannel } from '../channel/linq.js';
-import { composeReply } from '../channel/outcome.js';
+import { composeAck, composeApproval, composeReply } from '../channel/outcome.js';
 import type { InboundChannel, InboundRequest } from '../channel/types.js';
 import { createDuffelClient } from '../duffel/client.js';
 import { createPravaClient } from '../prava/client.js';
@@ -34,6 +34,7 @@ import {
   instrumentMerchant,
   instrumentPrava,
   type TamperMode,
+  type Emit,
   type UiEvent,
 } from './events.js';
 
@@ -91,19 +92,28 @@ const replyTo = (request: InboundRequest): InboundChannel =>
 const POLL_MS = 1_500;
 
 /**
- * Arrived, shown to the human, not yet confirmed.
+ * Demo affordance, set from the screen and applied to the next run.
  *
- * A booking is only ever started from one of these, so what runs always traces back to a
- * message that genuinely arrived — the UI cannot invent an instruction and post it.
+ * It lives here rather than travelling with the request because a request now arrives from
+ * a phone and starts on its own — there is no longer a moment where the screen is asked
+ * for permission and could carry it along.
  */
-const awaiting = new Map<string, InboundRequest>();
+let tamperMode: TamperMode = 'none';
 
 async function runBooking(request: InboundRequest, tamper: TamperMode): Promise<void> {
   if (running) return;
   running = true;
   try {
     const config = loadConfig();
-    const emit = broadcast;
+
+    // The approval message names the airline, which is only known once a hold succeeds —
+    // and after a fallback it is not the carrier the gate first chose. Captured off the
+    // event stream so the orchestrator stays unaware of any of this.
+    let heldCarrier = '';
+    const emit: Emit = (event) => {
+      if (event.type === 'held') heldCarrier = event.carrier;
+      broadcast(event);
+    };
 
     // The message is the only input. Everything downstream — including which cabin gets
     // searched, and therefore whether the policy gate blocks — comes from what the
@@ -113,6 +123,13 @@ async function runBooking(request: InboundRequest, tamper: TamperMode): Promise<
     emit({ type: 'instructed', text: instruction });
     const intent = await intentParser.parse(instruction);
     emit({ type: 'understood', intent });
+
+    // Acknowledge before searching. The traveller has just messaged a number and would
+    // otherwise hear nothing for twenty seconds — and restating the interpretation is how
+    // they catch a misread before it costs anything. It asks for nothing: looking is free.
+    const ack = composeAck(intent, { org: policy.org });
+    await replyTo(request).reply(request.threadId, ack);
+    emit({ type: 'acknowledged', text: ack });
 
     const duffel = instrumentDuffel(
       createDuffelClient({ baseUrl: config.duffelBaseUrl, apiKey: config.duffelApiKey }),
@@ -127,25 +144,27 @@ async function runBooking(request: InboundRequest, tamper: TamperMode): Promise<
       merchantCountry: 'AU',
     });
 
-    const prava = instrumentPrava(
-      {
-        ...realPrava,
-        async createSession(req) {
-          const session = await realPrava.createSession(req);
-          // Opening the checkout is the passkey step. When a browser is watching it
-          // opens the checkout itself, as a positioned popup, so the handoff reads as
-          // a payment modal over the agent rather than a tab switch away from it.
-          // Only when nothing is watching (CLI rehearsal) does the server open a tab —
-          // otherwise the checkout would open twice, and a second window holding the
-          // same session is exactly the tab collision that has broken runs before.
-          if (clients.size === 0) {
-            spawn('cmd', ['/c', 'start', 'chrome', session.iframeUrl], { stdio: 'ignore', detached: true }).unref();
-          }
-          return session;
-        },
-      },
-      emit,
-    );
+    // How the approval reaches the human.
+    //
+    // For a request that arrived from a real channel, the link goes back into the same
+    // thread: the traveller is holding the device the passkey is bound to, and they never
+    // leave Messages. Verified on an iPhone — the checkout renders, the enrolled card is
+    // pre-selected, and Face ID satisfies the WebAuthn step in one tap.
+    //
+    // For a rehearsal on the demo channel there is no phone, so the checkout opens locally
+    // instead. Never both: a second window holding the same session is the tab collision
+    // that has broken runs before.
+    const deliverApproval = async (url: string, amount: string, currency: string): Promise<string | null> => {
+      if (request.channel === 'demo') {
+        spawn('cmd', ['/c', 'start', 'chrome', url], { stdio: 'ignore', detached: true }).unref();
+        return null;
+      }
+      const selected = { carrier: { name: heldCarrier || 'Your airline' }, totalAmount: amount, currency };
+      await replyTo(request).reply(request.threadId, composeApproval(selected, url));
+      return request.from;
+    };
+
+    const prava = instrumentPrava(realPrava, emit, deliverApproval);
 
     const merchant = instrumentMerchant(
       applyTamper(createSimulatedMerchant({ merchantName: 'TravelGuard24' }), tamper),
@@ -237,8 +256,11 @@ async function watch(): Promise<void> {
           // queued: it would otherwise surface minutes later against a screen showing
           // someone else's booking.
           if (running) continue;
-          awaiting.set(request.id, request);
           broadcast({ type: 'arrived', request });
+          // Proceeds on its own. Searching and gating spend nothing, so there is nothing
+          // to ask permission for yet — the only approval is the passkey, and that is
+          // requested later, in the traveller's own thread, once there is an amount.
+          void runBooking(request, tamperMode);
         }
       } catch (err) {
         // Per source, so one vendor failing does not stop the others being watched.
@@ -261,24 +283,6 @@ createServer((req, res) => {
       'Cache-Control': 'no-store, must-revalidate',
     });
     res.end(readFileSync(fileURLToPath(new URL('public/index.html', ROOT))));
-    return;
-  }
-
-  // Parses an instruction and returns what the agent understood — and does nothing else.
-  // No search, no vendor, no booking. It exists so the human confirms the agent's
-  // INTERPRETATION rather than their own typing, which is the only version of a confirm
-  // step that carries any information.
-  if (url.pathname === '/understand' && req.method === 'POST') {
-    let raw = '';
-    req.on('data', (c) => (raw += c));
-    req.on('end', () => {
-      void (async () => {
-        const { instruction } = (raw ? JSON.parse(raw) : {}) as { instruction?: string };
-        const intent = await intentParser.parse(instruction?.trim() || '');
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify(intent));
-      })();
-    });
     return;
   }
 
@@ -323,22 +327,16 @@ createServer((req, res) => {
     return;
   }
 
-  if (url.pathname === '/book' && req.method === 'POST') {
+  // Arms the demo affordance for the next run. A request now arrives from a phone and
+  // starts on its own, so this can no longer ride along with a confirmation.
+  if (url.pathname === '/tamper' && req.method === 'POST') {
     let raw = '';
     req.on('data', (c) => (raw += c));
     req.on('end', () => {
-      const body = (raw ? JSON.parse(raw) : {}) as { requestId?: string; tamper?: TamperMode };
-      const request = body.requestId ? awaiting.get(body.requestId) : undefined;
-      if (!request) {
-        // A booking must trace back to a message somebody actually sent.
-        res.writeHead(409, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'no such pending request' }));
-        return;
-      }
-      awaiting.delete(request.id);
-      void runBooking(request, body.tamper ?? 'none');
-      res.writeHead(202, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ started: true }));
+      const { mode } = (raw ? JSON.parse(raw) : {}) as { mode?: TamperMode };
+      tamperMode = mode ?? 'none';
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ tamper: tamperMode }));
     });
     return;
   }

@@ -150,10 +150,8 @@
 
 <div class="scrim" id="scrim" hidden>
   <div class="sheet">
-    <div class="from"><span class="ch" id="sheetch">demo</span><span class="meta" id="sheetfrom"></span></div>
+    <div class="from"><span class="ch">rehearsal</span><span class="meta">stands in for the traveller's phone — nothing is sent over iMessage</span></div>
     <div class="bub you"><textarea id="q" rows="2">Book me SYD to LHR return, 15-25 Sept, economy</textarea></div>
-    <div class="who">Agent — what I understood</div>
-    <div class="bub agent" id="readback"><span class="meta">reading…</span></div>
     <div class="opts">
       <button class="ghost ex" data-say="Book me SYD to LHR return, 15-25 Sept, economy">economy trip</button>
       <button class="ghost ex" data-say="Book me business class SYD to LHR, 15-25 Sept - it's a long flight">business class</button>
@@ -169,7 +167,7 @@
     <div class="actions">
       <span class="meta sp"></span>
       <button class="ghost" id="cancel">Cancel</button>
-      <button id="confirm">Confirm</button>
+      <button id="confirm">Send as traveller</button>
     </div>
   </div>
 </div>
@@ -182,9 +180,9 @@ let ticker = null, refusals = 0, checkout = null, confirmation = '';
 const money = (m,c) => (m/100).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,',') + ' ' + c;
 const esc = (s) => String(s).replace(/[<&]/g, (c) => (c==='<'?'&lt;':'&amp;'));
 
-let ORG = 'company', CAP = 'the cap';
+let CAP = 'the cap';
 fetch('/policy').then(r=>r.json()).then(p=>{
-  ORG = p.org; CAP = money(p.budgetCapMinor, p.currency);
+  CAP = money(p.budgetCapMinor, p.currency);
   $('#org').textContent = `${p.org} · ${p.version} · 4 rules active`;
   $('#rules').innerHTML = [
     ['Budget cap', money(p.budgetCapMinor,p.currency)+' per booking'],
@@ -194,38 +192,18 @@ fetch('/policy').then(r=>r.json()).then(p=>{
   ].map(([k,v])=>`<div class="rule"><div class="k">${k}</div><div class="v">${v}</div></div>`).join('');
 });
 
-document.querySelectorAll('[data-say]').forEach(b=>b.onclick=()=>{ $('#q').value=b.dataset.say; readBack(); });
-document.querySelectorAll('[data-tamper]').forEach(b=>b.onclick=()=>{tamper=b.dataset.tamper;
-  document.querySelectorAll('[data-tamper]').forEach(x=>x.classList.toggle('on',x===b));});
+document.querySelectorAll('[data-say]').forEach(b=>b.onclick=()=>{ $('#q').value=b.dataset.say; });
 
-const MONTH=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-const day = (iso) => { const [y,m,d]=iso.split('-'); return `${+d} ${MONTH[+m-1]}`; };
-
-/* The agent restates the instruction before acting on it. Confirming your own typing
-   carries no information; confirming an interpretation does — and it puts the
-   assumptions the agent had to make in front of the human BEFORE anything is spent,
-   which is the same obligation the audit log discharges afterwards. */
-let readSeq = 0;
-async function readBack(){
-  const my = ++readSeq;
-  const box = $('#readback');
-  const r = await fetch('/understand',{method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({instruction:$('#q').value})});
-  const i = await r.json();
-  if(my!==readSeq) return;             // a later keystroke already won
-  box.innerHTML =
-    `<div><b>${i.origin} → ${i.destination}</b> return · ${day(i.departureDate)} – ${day(i.returnDate)}
-       · ${i.cabinClass.replace('_',' ')}</div>
-     ${i.assumptions.length?`<div class="why">You didn't say: ${i.assumptions.join(' · ')}</div>`:''}
-     ${i.statedBudget?`<div class="why">You mentioned ${i.statedBudget} — noted, but ${ORG}'s cap is what decides.</div>`:''}
-     <div class="why">I'll check every offer against ${ORG}'s policy before requesting payment.</div>`;
-}
-
-let typing;
-$('#q').oninput = () => { clearTimeout(typing); typing=setTimeout(readBack, 350); };
+// Armed on the server, because a request now arrives from a phone and starts on its own —
+// there is no confirmation step left for it to ride along with.
+document.querySelectorAll('[data-tamper]').forEach(b=>b.onclick=()=>{
+  tamper=b.dataset.tamper;
+  document.querySelectorAll('[data-tamper]').forEach(x=>x.classList.toggle('on',x===b));
+  fetch('/tamper',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({mode:tamper})});
+});
 
 const CH_LABEL = {demo:'demo', imessage:'iMessage', email:'email'};
-let pendingId = null;
 
 fetch('/channel').then(r=>{ if(!r.ok) throw new Error(String(r.status)); return r.json(); }).then(c=>{
   const label = c.kind==='demo'
@@ -241,49 +219,23 @@ fetch('/channel').then(r=>{ if(!r.ok) throw new Error(String(r.status)); return 
   $('#watch').previousElementSibling.style.animation = 'none';
 });
 
-/* The sheet is opened BY AN ARRIVING MESSAGE, not by a button. The traveller's words are
-   shown exactly as they were sent — read-only when they came from a real channel, since
-   editing someone else's message and then acting on it would misrepresent what was asked. */
-function openSheet(request){
-  pendingId = request.id;
-  const inbound = request.channel !== 'demo';
-  $('#sheetch').textContent = CH_LABEL[request.channel] || request.channel;
-  $('#sheetfrom').textContent =
-    `from ${request.from} · ${new Date(request.receivedAt).toLocaleTimeString('en-GB')}`;
-  $('#q').value = request.text;
-  $('#q').readOnly = inbound;
-  $('#scrim').hidden = false;
-  readBack();
-  if(!inbound) $('#q').focus();
-}
-
-// Asks the server to inject a message into the demo channel. It cannot fabricate an
-// inbound iMessage — so anything on screen during a real run really did arrive.
-const simulate = () => {
-  fetch('/simulate',{method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({text:$('#q').value})});
-};
-$('#trigger').onclick = simulate;
-$('#again').onclick = simulate;
-$('#cancel').onclick = () => { $('#scrim').hidden=true; pendingId=null; };
+/* The sheet is a REHEARSAL surface, not an approval one.
+   Nothing on this screen approves anything any more: searching and gating spend nothing,
+   and the one thing that does — the passkey — is approved on the traveller's phone, on
+   the device the credential is bound to. This box only stands in for that phone when
+   there isn't one, so a screen state can be re-run without messaging a real handset. */
+const openSheet = () => { $('#scrim').hidden=false; $('#q').focus(); };
+$('#trigger').onclick = openSheet;
+$('#again').onclick = openSheet;
+$('#cancel').onclick = () => { $('#scrim').hidden=true; };
 document.onkeydown = (ev) => { if(ev.key==='Escape' && !$('#scrim').hidden) $('#cancel').onclick(); };
 
 $('#confirm').onclick = () => {
-  if(!pendingId) return;
   $('#scrim').hidden=true;
-  $('#idle').style.display='none';
-  flow.innerHTML=''; log.innerHTML='<div class="empty">No entries yet.</div>';
-  entries=0; n=0; refusals=0; confirmation='';
-  clearInterval(ticker); ticker=null;
-  // A demo affordance that is only a button state is one a viewer can miss. While it is
-  // armed it stays declared on screen for the whole run — the rejection has to be
-  // visibly caused, or it proves nothing.
-  $('#badge').innerHTML = tamper==='none' ? '' :
-    `<div class="badge">demo control armed — presenting a tampered
-       ${tamper==='replay'?'credential (used twice)':tamper} to the merchant</div>`;
-  fetch('/book',{method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({requestId:pendingId,tamper})});
-  pendingId=null;
+  // Injects into the demo channel. It cannot fabricate an inbound iMessage, so anything
+  // labelled `iMessage` on screen really did arrive from a phone.
+  fetch('/simulate',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({text:$('#q').value})});
 };
 
 /* Steps accumulate. Finished ones collapse to a one-line summary so the whole
@@ -352,9 +304,20 @@ function addAudit(e){
 new EventSource('/events').onmessage = (m) => {
   const e = JSON.parse(m.data);
 
-  // A request arrived on the watched channel. Nothing has been decided yet — the human
-  // sees what was asked and what the agent understood, and confirms before anything runs.
-  if(e.type==='arrived') openSheet(e.request);
+  // A request arrived and the agent is already acting on it. It asks for nothing yet:
+  // looking costs nothing, so there is nothing to approve until there is an amount.
+  if(e.type==='arrived'){
+    $('#idle').style.display='none';
+    $('#hdrwatch').hidden=false;
+    flow.innerHTML=''; log.innerHTML='<div class="empty">No entries yet.</div>';
+    entries=0; n=0; refusals=0; confirmation='';
+    clearInterval(ticker); ticker=null;
+    $('#badge').innerHTML = tamper==='none' ? '' :
+      `<div class="badge">demo control armed — presenting a tampered
+         ${tamper==='replay'?'credential (used twice)':tamper} to the merchant</div>`;
+    const r=e.request;
+    TITLES.ask = r.channel==='demo' ? 'Request' : `Request · ${CH_LABEL[r.channel]||r.channel}`;
+  }
 
   if(e.type==='instructed'){
     body('ask').innerHTML = `<div class="said">“${esc(e.text)}”</div>`;
@@ -373,6 +336,15 @@ new EventSource('/events').onmessage = (m) => {
        </table>
        ${i.assumptions.length?`<div class="why">Assumed: ${i.assumptions.join(' · ')}</div>`:''}`;
     close('read', `${i.origin}→${i.destination} · ${cab}`);
+  }
+
+  /* Acknowledged before anything is searched. It asks for nothing — looking is free — but
+     the traveller has just messaged a number and would otherwise hear nothing for twenty
+     seconds, and restating the interpretation is how a misread gets caught early. */
+  if(e.type==='acknowledged'){
+    const el=document.getElementById('s-read');
+    if(el) el.querySelector('.bd').insertAdjacentHTML('beforeend',
+      `<div class="why" style="margin-top:8px">Replied in thread: “${esc(e.text.split('\n')[0])}”</div>`);
   }
 
   /* A live return search takes 15–25s. Left as a static line that is the longest
@@ -492,6 +464,17 @@ new EventSource('/events').onmessage = (m) => {
      can refuse it — hence the explicit button, which doubles as the way back in if the
      window gets closed mid-tap. */
   if(e.type==='awaiting_passkey'){
+    // When the request came from a phone, the approval link went back to that phone —
+    // the device the passkey is bound to. Nothing opens here, and nothing should: this
+    // screen is watching the authorisation, not performing it.
+    if(e.sentTo){
+      body('auth').innerHTML =
+        `<div class="price">${e.amount} <span class="meta" style="font-size:13px">${e.currency}</span></div>
+         <div class="tick">TravelGuard24 · one-time · locked to this merchant and this exact amount</div>
+         <div class="banner blue"><b>Approval sent to ${esc(e.sentTo)}.</b>
+           Waiting for the traveller's passkey — Visa-hosted, on their own device.</div>`;
+      return;
+    }
     body('auth').innerHTML =
       `<div class="price">${e.amount} <span class="meta" style="font-size:13px">${e.currency}</span></div>
        <div class="tick">TravelGuard24 · one-time · locked to this merchant and this exact amount</div>
