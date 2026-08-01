@@ -119,7 +119,9 @@
 const $ = (s) => document.querySelector(s);
 const flow = $('#flow'), log = $('#log');
 let tamper = 'none', entries = 0, n = 0;
+let ticker = null, refusals = 0, checkout = null;
 const money = (m,c) => (m/100).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,',') + ' ' + c;
+const esc = (s) => String(s).replace(/[<&]/g, (c) => (c==='<'?'&lt;':'&amp;'));
 
 fetch('/policy').then(r=>r.json()).then(p=>{
   $('#org').textContent = `${p.org} · ${p.version} · 4 rules active`;
@@ -137,7 +139,8 @@ document.querySelectorAll('[data-tamper]').forEach(b=>b.onclick=()=>{tamper=b.da
 
 $('#go').onclick = () => {
   flow.innerHTML=''; log.innerHTML='<div class="empty">No entries yet.</div>';
-  entries=0; n=0; $('#go').disabled=true;
+  entries=0; n=0; refusals=0; $('#go').disabled=true;
+  clearInterval(ticker); ticker=null;
   fetch('/book',{method:'POST',headers:{'Content-Type':'application/json'},
     body:JSON.stringify({instruction:$('#q').value,tamper})});
 };
@@ -167,15 +170,27 @@ function close(id, summary, kind){
   if(summary!==undefined){ el.querySelector('.sum').textContent = summary; el.querySelector('.bd').innerHTML=''; }
 }
 
-/* Truncate at the first zero and name the rule that emptied it. A run of repeated
-   zeros reads as a rendering fault rather than a funnel. */
-function funnelStr(total, funnel){
-  const parts=[String(total)];
+/* The funnel, revealed one rule at a time.
+   The numbers are real and already computed — only the reveal is paced. A funnel that
+   appears complete in a single frame reads as a summary; one that empties step by step
+   reads as rules being applied, which is what actually happened. Same reasoning as the
+   sequential guardrail reveal below.
+   Truncated at the first zero, naming the rule that emptied it: a run of repeated zeros
+   reads as a rendering fault rather than a funnel. */
+function revealFunnel(el, total, funnel, then){
+  el.textContent = String(total);
+  const steps=[];
   for(const f of funnel){
-    parts.push(String(f.remaining));
-    if(f.remaining===0) return `${parts.join(' → ')} <span style="opacity:.8">— all excluded at ${f.rule.replace(/_/g,' ')}</span>`;
+    steps.push(f);
+    if(f.remaining===0) break;
   }
-  return parts.join(' → ');
+  steps.forEach((f,i)=>setTimeout(()=>{
+    el.insertAdjacentHTML('beforeend',
+      ` → ${f.remaining}` + (f.remaining===0
+        ? ` <span style="opacity:.8">— all excluded at ${f.rule.replace(/_/g,' ')}</span>` : ''));
+    if(i===steps.length-1) setTimeout(then, 260);
+  }, 260*(i+1)));
+  if(steps.length===0) setTimeout(then, 0);
 }
 
 const ruleRows = (rules) => rules.map(r=>`<tr>
@@ -215,63 +230,142 @@ new EventSource('/events').onmessage = (m) => {
     close('read', `${i.origin}→${i.destination} · ${cab}`);
   }
 
-  if(e.type==='searching') body('search').innerHTML = `<div class="tick">Querying Duffel<b> …</b></div>`;
+  /* A live return search takes 15–25s. Left as a static line that is the longest
+     silence in the demo, and silence on screen reads as a hang. An honest elapsed
+     counter costs nothing and shows the wait belongs to the vendor, not to us. */
+  if(e.type==='searching'){
+    const q=e.query;
+    body('search').innerHTML =
+      `<div class="tick">${q.origin} → ${q.destination} · ${q.departureDate} → ${q.returnDate} · ${q.cabinClass.replace('_',' ')}</div>
+       <div class="tick">Querying Duffel <b id="el">0.0s</b></div>
+       <div class="why">Every carrier serving the route is quoted. Fares that cannot be held are dropped before the gate sees them — a vendor limit, not a policy one.</div>`;
+    const t0=Date.now();
+    clearInterval(ticker);
+    ticker=setInterval(()=>{
+      const el=document.getElementById('el');
+      if(!el){ clearInterval(ticker); ticker=null; return; }
+      el.textContent=((Date.now()-t0)/1000).toFixed(1)+'s';
+    },100);
+  }
 
   if(e.type==='searched'){
-    body('search').innerHTML = `<div class="tick"><b>${e.offers}</b> bookable offers · <b>${e.carriers}</b> airlines</div>`;
+    clearInterval(ticker); ticker=null;
+    body('search').innerHTML =
+      `<div class="tick"><b>${e.offers}</b> bookable offers · <b>${e.carriers}</b> airlines <span class="meta">in ${(e.ms/1000).toFixed(1)}s</span></div>`;
     close('search', `${e.offers} offers / ${e.carriers} airlines`);
   }
 
   if(e.type==='decided'){
     const d=e.decision;
-    const funnel = funnelStr(d.totalOffers, d.funnel);
+    body('gate').innerHTML =
+      `<div class="tick" style="margin-bottom:9px">Evaluating 4 rules … <b id="fn"></b></div>
+       <div id="verdict" style="opacity:0;transition:opacity .3s ease"></div>`;
+    const verdict = document.getElementById('verdict');
+
     if(d.outcome==='APPROVED'){
       const s=d.selected;
-      body('gate').innerHTML =
-        `<div class="tick" style="margin-bottom:9px">Evaluating 4 rules … <b>${funnel}</b></div>
-         <div class="carrier">${s.carrier.name} <span class="meta">(${s.carrier.iata})</span></div>
+      verdict.innerHTML =
+        `<div class="carrier">${s.carrier.name} <span class="meta">(${s.carrier.iata})</span></div>
          <div class="price" style="margin:2px 0 8px">${s.totalAmount} <span class="meta" style="font-size:13px">${s.currency}</span></div>
          <table class="checks">${ruleRows(s.rules)}</table>
          ${d.runnerUp?`<div class="why">Chose ${s.carrier.name} at ${s.totalAmount} over ${d.runnerUp.carrier.name} at ${d.runnerUp.totalAmount} — cheapest compliant</div>`:''}`;
-      close('gate', undefined);
-      document.getElementById('s-gate').classList.add('done');
-      document.querySelector('#s-gate .hd .n').textContent='✓';
-      document.querySelector('#s-gate .hd .sum').textContent = `${s.totalAmount} ${s.currency}`;
+      revealFunnel(document.getElementById('fn'), d.totalOffers, d.funnel, ()=>{
+        verdict.style.opacity='1';
+        const g=document.getElementById('s-gate'); if(!g) return;
+        g.classList.remove('live'); g.classList.add('done');
+        g.querySelector('.hd .n').textContent='✓';
+        g.querySelector('.hd .sum').textContent = `${s.totalAmount} ${s.currency}`;
+      });
     } else {
       const nm=d.nearestMiss, ch=d.cheapestOverall;
-      body('gate').innerHTML =
-        `<div class="tick" style="margin-bottom:9px">Evaluating 4 rules … <b>${funnel}</b></div>
-         <div class="carrier meta">Nearest miss — <span style="color:var(--ink)">${nm?.carrier.name??'—'}</span></div>
+      verdict.innerHTML =
+        `<div class="carrier meta">Nearest miss — <span style="color:var(--ink)">${nm?.carrier.name??'—'}</span></div>
          <div class="price" style="margin:2px 0 8px;color:var(--warn)">${nm?.totalAmount??'—'} <span class="meta" style="font-size:13px">${nm?.currency??''}</span></div>
          <table class="checks">${nm?ruleRows(nm.rules.filter(r=>!r.passed)):''}</table>
          <div class="why">${d.totalOffers} offers evaluated. None compliant.${ch&&ch.offerId!==nm?.offerId?`<br>Cheapest available ${ch.totalAmount} ${ch.currency} — ${ch.failedRules.length} rules short.`:''}</div>
          <div class="banner"><b>No payment session was created.</b> The agent did not fail to pay — it declined to.</div>`;
-      close('gate', undefined, 'stop');
-      document.querySelector('#s-gate .hd .sum').textContent = 'BLOCKED';
+      revealFunnel(document.getElementById('fn'), d.totalOffers, d.funnel, ()=>{
+        verdict.style.opacity='1';
+        close('gate', undefined, 'stop');
+        document.querySelector('#s-gate .hd .sum').textContent = 'BLOCKED';
+      });
     }
   }
 
-  if(e.type==='holding') body('hold').innerHTML = `<div class="tick">Reserving seats<b> …</b></div>`;
-  if(e.type==='held'){
-    body('hold').innerHTML = `<div class="tick">PNR <b>${e.pnr}</b> · ${e.amount} ${e.currency} <span class="meta">— reserved, nothing paid yet</span></div>`;
-    close('hold', `PNR ${e.pnr}`);
+  /* The hold step has two parts: a running list of airlines that refused, and the
+     current attempt. They are separate elements because the refusals must survive the
+     successful render — overwriting them would erase the reason the booking landed on
+     a carrier that was not the cheapest, which is exactly what the audit entry records
+     and what a judge would ask about. */
+  function holdParts(){
+    const bd = body('hold');
+    if(!document.getElementById('h-list'))
+      bd.innerHTML = `<div id="h-list"></div><div id="h-now"></div>`;
+    return { list: document.getElementById('h-list'), now: document.getElementById('h-now') };
   }
-  if(e.type==='hold_refused')
-    body('hold').insertAdjacentHTML('beforeend', `<div class="tick" style="color:var(--warn)">airline refused hold — trying next compliant offer</div>`);
 
-  if(e.type==='awaiting_passkey')
+  if(e.type==='holding')
+    holdParts().now.innerHTML =
+      `<div class="tick">Reserving seats with <b>${e.carrier}</b><b> …</b></div>`;
+
+  if(e.type==='hold_refused'){
+    refusals++;
+    const p = holdParts();
+    p.now.innerHTML='';
+    p.list.insertAdjacentHTML('beforeend',
+      `<div class="tick" style="color:var(--warn)">✕ <b>${e.carrier}</b> refused the hold
+         <span class="meta">— ${esc(e.reason).slice(0,90)}</span></div>
+       <div class="why" style="margin:0 0 6px">Falling back to the next compliant offer. Every candidate already passed the policy gate, so the decision is unchanged.</div>`);
+  }
+
+  if(e.type==='held'){
+    holdParts().now.innerHTML =
+      `<div class="tick">PNR <b>${e.pnr}</b> · ${e.carrier} · ${e.amount} ${e.currency} <span class="meta">— reserved, nothing paid yet</span></div>`;
+    // Keep the refusals visible in the collapsed summary; they explain the carrier.
+    const el = document.getElementById('s-hold');
+    if(el){
+      el.classList.remove('live'); el.classList.add('done');
+      el.querySelector('.hd .n').textContent='✓';
+      el.querySelector('.hd .sum').textContent =
+        refusals ? `PNR ${e.pnr} · ${refusals} refused` : `PNR ${e.pnr}`;
+    }
+  }
+
+  /* The checkout opens as a positioned popup rather than a tab, so the handoff reads as
+     a payment modal over the agent instead of navigating away from it. It cannot be an
+     iframe: Visa sends `frame-ancestors none` and blocks delegated WebAuthn, deliberately.
+     A popup opened from a server-sent event has no user gesture behind it, so a blocker
+     can refuse it — hence the explicit button, which doubles as the way back in if the
+     window gets closed mid-tap. */
+  if(e.type==='awaiting_passkey'){
     body('auth').innerHTML =
       `<div class="price">${e.amount} <span class="meta" style="font-size:13px">${e.currency}</span></div>
        <div class="tick">TravelGuard24 · one-time · locked to this merchant and this exact amount</div>
-       <div class="banner blue"><b>Waiting for passkey…</b> Visa-hosted prompt opened in your browser.</div>`;
+       <div class="banner blue" id="pk"><b>Waiting for passkey…</b> Visa-hosted prompt open.
+         <button class="ghost" id="reopen" style="margin-left:6px">open checkout</button></div>`;
+    const open = () => {
+      const w = 520, h = 780;
+      checkout = window.open(e.iframeUrl, 'prava-checkout',
+        `width=${w},height=${h},left=${Math.round((screen.width-w)/2)},top=${Math.round((screen.height-h)/2)}`);
+      if(!checkout) document.getElementById('pk').innerHTML =
+        `<b>Popup blocked.</b> Click to open the Visa-hosted checkout.
+         <button class="ghost" id="reopen" style="margin-left:6px">open checkout</button>`;
+      document.getElementById('reopen').onclick = open;
+    };
+    open();
+  }
 
   if(e.type==='redeemed'){
     close('auth','authorised');
-    // The policy checks have had the whole passkey wait to be read. Collapse them now
-    // so the final screen fits without scrolling — that screen is the submission
-    // screenshot, and a cut-off first step reads as a broken layout.
-    const g=document.getElementById('s-gate');
-    if(g){ g.querySelector('.bd').innerHTML=''; }
+    try{ checkout?.close(); }catch{} checkout=null;
+    // The policy checks and any hold refusals have had the whole passkey wait to be
+    // read. Collapse them now so the final screen fits without scrolling — that screen
+    // is the submission screenshot, and a cut-off first step reads as a broken layout.
+    // Both keep their header summary, so nothing is lost, only folded.
+    for(const id of ['s-gate','s-hold']){
+      const el=document.getElementById(id);
+      if(el) el.querySelector('.bd').innerHTML='';
+    }
     const el = body('guard'); el.innerHTML = `<table class="checks" id="gt"></table>`;
     // Revealed one at a time — simultaneous ticks read as decoration, sequential
     // ticks read as enforcement.
@@ -306,7 +400,49 @@ new EventSource('/events').onmessage = (m) => {
   }
 
   if(e.type==='audit') addAudit(e);
-  if(e.type==='finished'){ $('#go').disabled=false; flow.scrollTop=flow.scrollHeight; }
+
+  /* Every way the flow can stop, said plainly.
+     Without this a run that halts leaves the last step spinning — during the Visa
+     cryptogram outage the screen sat on "Waiting for passkey…" indefinitely while the
+     orchestrator had already stopped correctly. A halt that protects an invariant is
+     worth showing: it is the same claim as the blocked path, made at the payment layer. */
+  const HALTS = {
+    NO_BOOKABLE_OFFER: ['Every compliant offer was refused a hold by its airline.',
+      'No payment session was created. Policy approved these fares; the carriers would not reserve them.'],
+    AUTHORISATION_TIMED_OUT: ['The passkey was never completed.',
+      'No credential was issued, so the airline is never paid and the hold simply expires.'],
+    AUTHORISATION_FAILED: ['Prava could not issue a credential.',
+      'No mandate exists, so settlement never fires. The hold expires unpaid.'],
+    REPORT_REJECTED: ['The network did not confirm the payment.',
+      'Settlement is not attempted on an unconfirmed mandate.'],
+    PRICE_DRIFTED: ['The price moved between quote and order.',
+      'A moving price stops the booking rather than minting a mandate for a number nobody approved.'],
+    SETTLEMENT_FAILED: ['Leg 1 completed but the airline could not be paid.',
+      'Recorded loudly for manual resolution — production would refund.'],
+    ERROR: ['The run stopped on an error.', ''],
+  };
+
+  if(e.type==='finished'){
+    $('#go').disabled=false;
+    clearInterval(ticker); ticker=null;
+    try{ checkout?.close(); }catch{} checkout=null;
+    const halt = HALTS[e.status];
+    if(halt){
+      // Nothing may be left mid-animation once the run has stopped.
+      document.querySelectorAll('.step.live').forEach(el=>{
+        el.classList.remove('live'); el.classList.add('stop');
+        el.querySelector('.hd .n').textContent='!';
+      });
+      TITLES.halt = 'Stopped';
+      body('halt').innerHTML =
+        `<div class="said" style="font-size:13.5px">${halt[0]}</div>
+         ${halt[1]?`<div class="banner"><b>No money moved.</b> ${halt[1]}</div>`:''}
+         ${typeof e.detail==='string'?`<div class="why">${esc(e.detail).slice(0,160)}</div>`:''}`;
+      close('halt', undefined, 'stop');   // undefined keeps the body; the summary is set below
+      document.querySelector('#s-halt .hd .sum').textContent = e.status;
+    }
+    flow.scrollTop=flow.scrollHeight;
+  }
 };
 </script>
 </body>

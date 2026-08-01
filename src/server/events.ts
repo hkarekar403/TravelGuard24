@@ -15,17 +15,18 @@ import type {
   PravaPort,
   RedemptionResult,
   AuditPort,
+  SearchRequest,
 } from '../orchestrator/ports.js';
 
 export type UiEvent =
   | { type: 'instructed'; text: string }
   | { type: 'understood'; intent: TripIntent }
-  | { type: 'searching' }
-  | { type: 'searched'; offers: number; carriers: number }
+  | { type: 'searching'; query: SearchRequest }
+  | { type: 'searched'; offers: number; carriers: number; ms: number }
   | { type: 'decided'; decision: PolicyDecision }
-  | { type: 'holding' }
+  | { type: 'holding'; carrier: string; amount: string; currency: string }
   | { type: 'held'; pnr: string; carrier: string; amount: string; currency: string }
-  | { type: 'hold_refused'; carrier: string }
+  | { type: 'hold_refused'; carrier: string; reason: string }
   | { type: 'awaiting_passkey'; amount: string; currency: string; iframeUrl: string; expiresAt: string }
   | { type: 'redeemed'; redemption: RedemptionResult }
   | { type: 'settling' }
@@ -35,36 +36,66 @@ export type UiEvent =
 
 export type Emit = (event: UiEvent) => void;
 
-/** Wraps the Duffel port so search and hold progress reach the screen. */
+/**
+ * Wraps the Duffel port so search and hold progress reach the screen.
+ *
+ * The port deals in offer IDs, but a screen showing `off_0000B9…` when an airline
+ * refuses a hold tells a viewer nothing. So the offers seen going past are remembered
+ * here and the ID is resolved back to a carrier on the way out. Presentation detail,
+ * kept out of the orchestrator and out of the port contract.
+ */
 export function instrumentDuffel(inner: DuffelPort, emit: Emit): DuffelPort {
+  const seen = new Map<string, { carrier: string; amount: string; currency: string }>();
+  const describe = (offerId: string) =>
+    seen.get(offerId) ?? { carrier: offerId, amount: '', currency: '' };
+
   return {
     async search(req) {
-      emit({ type: 'searching' });
+      emit({ type: 'searching', query: req });
+      const startedAt = Date.now();
       const offers = await inner.search(req);
+      for (const o of offers) {
+        seen.set(o.id, { carrier: o.owner.name, amount: o.total_amount, currency: o.total_currency });
+      }
       emit({
         type: 'searched',
         offers: offers.length,
         carriers: new Set(offers.map((o) => o.owner.iata_code)).size,
+        ms: Date.now() - startedAt,
       });
       return offers;
     },
-    refreshOffer: (id) => inner.refreshOffer(id),
+    async refreshOffer(id) {
+      const offer = await inner.refreshOffer(id);
+      // Re-quoting can move the price. Keep the map on the current number so the hold
+      // step shows what is actually about to be committed.
+      seen.set(offer.id, {
+        carrier: offer.owner.name,
+        amount: offer.total_amount,
+        currency: offer.total_currency,
+      });
+      return offer;
+    },
     async createHoldOrder(offerId, passenger, metadata) {
-      emit({ type: 'holding' });
+      const { carrier, amount, currency } = describe(offerId);
+      emit({ type: 'holding', carrier, amount, currency });
       try {
         const order = await inner.createHoldOrder(offerId, passenger, metadata);
         emit({
           type: 'held',
           pnr: order.bookingReference,
-          carrier: '',
+          carrier,
           amount: order.totalAmount,
           currency: order.totalCurrency,
         });
         return order;
       } catch (err) {
-        // Some airlines refuse holds. The orchestrator falls through to the next
-        // compliant offer; the screen should show that rather than appear to stall.
-        emit({ type: 'hold_refused', carrier: offerId });
+        // Some airlines refuse holds with `422 invalid_order_create_type`, and nothing
+        // in the offer says which will. The orchestrator falls through to the next
+        // compliant offer — every one of which the policy already approved — so this is
+        // a step in the journey, not an error. The screen has to say so, otherwise the
+        // fallback looks like a stall or, worse, like the gate being retried.
+        emit({ type: 'hold_refused', carrier, reason: err instanceof Error ? err.message : String(err) });
         throw err;
       }
     },
