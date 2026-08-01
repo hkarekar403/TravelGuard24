@@ -124,8 +124,16 @@ function findRoute(text: string): { origin: string | undefined; destination: str
 
 /** A day, optionally ordinal, that is not a fragment of a longer number ("2026", "1500"). */
 const DAY = String.raw`(?<!\d)(\d{1,2})(?:st|nd|rd|th)?(?!\d)`;
+/** Same, but the ordinal suffix is required — safe to match on its own. */
+const ORDINAL_DAY = String.raw`(?<!\d)(\d{1,2})(?:st|nd|rd|th)(?!\d)`;
 const MONTH_NAME = String.raw`(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*`;
 const RANGE_SEP = String.raw`\s*(?:[–—-]|to|until|through)\s*`;
+/**
+ * The filler between a day and its month. Dictation says "the 25th **of** September" where
+ * typing says "25 September" — without this the day and month stop being adjacent and the
+ * whole date silently falls back to the demo default.
+ */
+const OF = String.raw`\s+(?:of\s+)?(?:the\s+)?`;
 
 /** "september" / "sept" / "sep" → 9. */
 function monthOf(word: string): number | undefined {
@@ -150,33 +158,44 @@ function findDates(text: string, year: number): { departureDate: string | undefi
     return departureDate && returnDate ? { departureDate, returnDate } : none;
   };
 
-  // 1. A range that names its month once: "15-25 Sept", "25th to 28th September".
-  const rangeThenMonth = new RegExp(`${DAY}${RANGE_SEP}${DAY}\\s+${MONTH_NAME}`, 'i').exec(text);
+  // 1. A range that names its month once: "15-25 Sept", "25th to 28th of September".
+  const rangeThenMonth = new RegExp(`${DAY}${RANGE_SEP}${DAY}${OF}${MONTH_NAME}`, 'i').exec(text);
   if (rangeThenMonth) {
     const mm = monthOf(rangeThenMonth[3]!);
     if (mm) return build({ day: Number(rangeThenMonth[1]), month: mm }, { day: Number(rangeThenMonth[2]), month: mm });
   }
 
   // 2. Month first: "Sept 15-25".
-  const monthThenRange = new RegExp(`${MONTH_NAME}\\s+${DAY}${RANGE_SEP}${DAY}`, 'i').exec(text);
+  const monthThenRange = new RegExp(`${MONTH_NAME}${OF}${DAY}${RANGE_SEP}${DAY}`, 'i').exec(text);
   if (monthThenRange) {
     const mm = monthOf(monthThenRange[1]!);
     if (mm) return build({ day: Number(monthThenRange[2]), month: mm }, { day: Number(monthThenRange[3]), month: mm });
   }
 
   // 3. Two independent day+month mentions, in either order and with years present:
-  //    "25 September 2026 to 28th September 2026", "25 Sept to 3 Oct".
-  const pair = new RegExp(`(?:${DAY}\\s+${MONTH_NAME})|(?:${MONTH_NAME}\\s+${DAY})`, 'gi');
-  const found: Array<{ day: number; month: number }> = [];
+  //    "25 September 2026 to 28th September 2026", "the 25th of September to the 28th of
+  //    September", "25 Sept to 3 Oct".
+  const pair = new RegExp(`(?:${DAY}${OF}${MONTH_NAME})|(?:${MONTH_NAME}${OF}${DAY})`, 'gi');
+  const found: Array<{ day: number; month: number; at: number }> = [];
   for (const m of text.matchAll(pair)) {
     const day = m[1] ?? m[4];
     const monthWord = m[2] ?? m[3];
     if (!day || !monthWord) continue;
     const mm = monthOf(monthWord);
-    if (mm) found.push({ day: Number(day), month: mm });
+    if (mm) found.push({ day: Number(day), month: mm, at: m.index + m[0].length });
     if (found.length === 2) break;
   }
   if (found.length === 2) return build(found[0]!, found[1]!);
+
+  // 4. One day+month, then a bare ordinal day — "on the 25th of September, returning the
+  //    28th". Common in speech, and the ordinal suffix is what makes a lone number safe to
+  //    read as a day at all.
+  if (found.length === 1) {
+    const first = found[0]!;
+    const rest = text.slice(first.at);
+    const trailing = new RegExp(ORDINAL_DAY).exec(rest);
+    if (trailing) return build(first, { day: Number(trailing[1]), month: first.month });
+  }
 
   return none;
 }

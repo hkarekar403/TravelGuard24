@@ -60,6 +60,29 @@ describe('dates', () => {
     expect([i.departureDate, i.returnDate]).toEqual(['2026-09-15', '2026-09-25']);
   });
 
+  // The demo is driven by Siri dictation, which phrases dates differently from typing —
+  // it says "the 25th OF September" where a keyboard says "25 September". Without the
+  // filler word the day and month stop being adjacent and the date silently defaults.
+  it('reads dictated "25th of September to 28th of September"', async () => {
+    const i = await parser.parse('Book me a Sydney to London return, 25th of September to 28th of September, economy');
+    expect([i.departureDate, i.returnDate]).toEqual(['2026-09-25', '2026-09-28']);
+  });
+
+  it('reads dictated "the 25th of September to the 28th of September 2026"', async () => {
+    const i = await parser.parse('Sydney to London, the 25th of September to the 28th of September 2026, economy');
+    expect([i.departureDate, i.returnDate]).toEqual(['2026-09-25', '2026-09-28']);
+  });
+
+  it('reads dictated "September 25th to September 28th"', async () => {
+    const i = await parser.parse('Sydney to London, September 25th to September 28th, economy');
+    expect([i.departureDate, i.returnDate]).toEqual(['2026-09-25', '2026-09-28']);
+  });
+
+  it('reads a return stated only as a bare ordinal', async () => {
+    const i = await parser.parse('Sydney to London on the 25th of September returning the 28th, economy');
+    expect([i.departureDate, i.returnDate]).toEqual(['2026-09-25', '2026-09-28']);
+  });
+
   it('reports the assumption when no dates are given at all', async () => {
     const i = await parser.parse('Book me SYD to LHR economy');
     expect(i.assumptions.join(' ')).toContain('dates not stated');
