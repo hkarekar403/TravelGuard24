@@ -1,0 +1,2850 @@
+[
+ {
+  "id": "off_0000B8iowdPxezMnQJvi80",
+  "total_amount": "1202.75",
+  "total_currency": "AUD",
+  "expires_at": "2026-07-26T08:38:00.430894Z",
+  "owner": {
+   "iata_code": "ZZ",
+   "name": "Duffel Airways"
+  },
+  "payment_requirements": {
+   "requires_instant_payment": false,
+   "price_guarantee_expires_at": "2026-07-28T08:08:00Z",
+   "payment_required_by": "2026-07-29T08:08:00Z"
+  },
+  "slices": [
+   {
+    "fare_brand_name": "Basic",
+    "segments": [
+     {
+      "departing_at": "2026-09-15T10:50:00",
+      "marketing_carrier": {
+       "iata_code": "ZZ",
+       "name": "Duffel Airways"
+      },
+      "operating_carrier": {
+       "iata_code": "ZZ",
+       "name": "Duffel Airways"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "fare_brand_name": "Basic",
+    "segments": [
+     {
+      "departing_at": "2026-09-25T18:34:00",
+      "marketing_carrier": {
+       "iata_code": "ZZ",
+       "name": "Duffel Airways"
+      },
+      "operating_carrier": {
+       "iata_code": "ZZ",
+       "name": "Duffel Airways"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "off_0000B8iowdQJdfeNRQ5zg8",
+  "total_amount": "1231.46",
+  "total_currency": "AUD",
+  "expires_at": "2026-07-26T08:38:00.431098Z",
+  "owner": {
+   "iata_code": "BA",
+   "name": "British Airways"
+  },
+  "payment_requirements": {
+   "requires_instant_payment": false,
+   "price_guarantee_expires_at": "2026-07-28T08:08:00Z",
+   "payment_required_by": "2026-07-29T08:08:00Z"
+  },
+  "slices": [
+   {
+    "fare_brand_name": "Basic",
+    "segments": [
+     {
+      "departing_at": "2026-09-15T10:50:00",
+      "marketing_carrier": {
+       "iata_code": "BA",
+       "name": "British Airways"
+      },
+      "operating_carrier": {
+       "iata_code": "BA",
+       "name": "British Airways"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "fare_brand_name": "Basic",
+    "segments": [
+     {
+      "departing_at": "2026-09-25T18:34:00",
+      "marketing_carrier": {
+       "iata_code": "BA",
+       "name": "British Airways"
+      },
+      "operating_carrier": {
+       "iata_code": "BA",
+       "name": "British Airways"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "off_0000B8iowdQJdfeNRQ5zgD",
+  "total_amount": "1231.32",
+  "total_currency": "AUD",
+  "expires_at": "2026-07-26T08:38:00.431468Z",
+  "owner": {
+   "iata_code": "IB",
+   "name": "Iberia"
+  },
+  "payment_requirements": {
+   "requires_instant_payment": false,
+   "price_guarantee_expires_at": "2026-07-28T08:08:00Z",
+   "payment_required_by": "2026-07-29T08:08:00Z"
+  },
+  "slices": [
+   {
+    "fare_brand_name": "Basic",
+    "segments": [
+     {
+      "departing_at": "2026-09-15T10:50:00",
+      "marketing_carrier": {
+       "iata_code": "IB",
+       "name": "Iberia"
+      },
+      "operating_carrier": {
+       "iata_code": "IB",
+       "name": "Iberia"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "fare_brand_name": "Basic",
+    "segments": [
+     {
+      "departing_at": "2026-09-25T18:34:00",
+      "marketing_carrier": {
+       "iata_code": "IB",
+       "name": "Iberia"
+      },
+      "operating_carrier": {
+       "iata_code": "IB",
+       "name": "Iberia"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "off_0000B8iowdR1b2DXTcQYmi",
+  "total_amount": "1256.25",
+  "total_currency": "AUD",
+  "expires_at": "2026-07-26T08:38:00.433423Z",
+  "owner": {
+   "iata_code": "AA",
+   "name": "American Airlines"
+  },
+  "payment_requirements": {
+   "requires_instant_payment": false,
+   "price_guarantee_expires_at": "2026-07-28T08:08:00Z",
+   "payment_required_by": "2026-07-29T08:08:00Z"
+  },
+  "slices": [
+   {
+    "fare_brand_name": "Basic Economy",
+    "segments": [
+     {
+      "departing_at": "2026-09-15T10:50:00",
+      "marketing_carrier": {
+       "iata_code": "AA",
+       "name": "American Airlines"
+      },
+      "operating_carrier": {
+       "iata_code": "AA",
+       "name": "American Airlines"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "fare_brand_name": "Basic Economy",
+    "segments": [
+     {
+      "departing_at": "2026-09-25T18:34:00",
+      "marketing_carrier": {
+       "iata_code": "AA",
+       "name": "American Airlines"
+      },
+      "operating_carrier": {
+       "iata_code": "AA",
+       "name": "American Airlines"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "off_0000B8iowoGRKjHp3yYlJi",
+  "total_amount": "1816.06",
+  "total_currency": "AUD",
+  "expires_at": "2026-07-26T08:38:00.000000Z",
+  "owner": {
+   "iata_code": "LH",
+   "name": "Lufthansa"
+  },
+  "payment_requirements": {
+   "requires_instant_payment": false,
+   "price_guarantee_expires_at": null,
+   "payment_required_by": "2026-07-28T23:08:00Z"
+  },
+  "slices": [
+   {
+    "fare_brand_name": "Economy Comfort",
+    "segments": [
+     {
+      "departing_at": "2026-09-15T14:05:00",
+      "marketing_carrier": {
+       "iata_code": "LH",
+       "name": "Lufthansa"
+      },
+      "operating_carrier": {
+       "iata_code": "CX",
+       "name": "Cathay Pacific"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     },
+     {
+      "departing_at": "2026-09-15T23:25:00",
+      "marketing_carrier": {
+       "iata_code": "LH",
+       "name": "Lufthansa"
+      },
+      "operating_carrier": {
+       "iata_code": "LH",
+       "name": "Lufthansa"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     },
+     {
+      "departing_at": "2026-09-16T08:00:00",
+      "marketing_carrier": {
+       "iata_code": "LH",
+       "name": "Lufthansa"
+      },
+      "operating_carrier": {
+       "iata_code": "LH",
+       "name": "Lufthansa"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "fare_brand_name": "Economy Comfort",
+    "segments": [
+     {
+      "departing_at": "2026-09-25T09:00:00",
+      "marketing_carrier": {
+       "iata_code": "LH",
+       "name": "Lufthansa"
+      },
+      "operating_carrier": {
+       "iata_code": "LH",
+       "name": "Lufthansa"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     },
+     {
+      "departing_at": "2026-09-25T12:55:00",
+      "marketing_carrier": {
+       "iata_code": "LH",
+       "name": "Lufthansa"
+      },
+      "operating_carrier": {
+       "iata_code": "LH",
+       "name": "Lufthansa"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     },
+     {
+      "departing_at": "2026-09-26T02:00:00",
+      "marketing_carrier": {
+       "iata_code": "LH",
+       "name": "Lufthansa"
+      },
+      "operating_carrier": {
+       "iata_code": "AI",
+       "name": "Air India"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "off_0000B8iowoNAvgfrOri8oQ",
+  "total_amount": "4116.45",
+  "total_currency": "AUD",
+  "expires_at": "2026-07-26T08:38:00.000000Z",
+  "owner": {
+   "iata_code": "LH",
+   "name": "Lufthansa"
+  },
+  "payment_requirements": {
+   "requires_instant_payment": false,
+   "price_guarantee_expires_at": null,
+   "payment_required_by": "2026-07-28T23:08:00Z"
+  },
+  "slices": [
+   {
+    "fare_brand_name": "Economy Flex",
+    "segments": [
+     {
+      "departing_at": "2026-09-15T14:50:00",
+      "marketing_carrier": {
+       "iata_code": "LX",
+       "name": "SWISS"
+      },
+      "operating_carrier": {
+       "iata_code": "SQ",
+       "name": "Singapore Airlines"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     },
+     {
+      "departing_at": "2026-09-15T23:05:00",
+      "marketing_carrier": {
+       "iata_code": "LX",
+       "name": "SWISS"
+      },
+      "operating_carrier": {
+       "iata_code": "LX",
+       "name": "SWISS"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     },
+     {
+      "departing_at": "2026-09-16T07:05:00",
+      "marketing_carrier": {
+       "iata_code": "LX",
+       "name": "SWISS"
+      },
+      "operating_carrier": {
+       "iata_code": "LX",
+       "name": "SWISS"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "fare_brand_name": "Economy Flex",
+    "segments": [
+     {
+      "departing_at": "2026-09-25T06:00:00",
+      "marketing_carrier": {
+       "iata_code": "LX",
+       "name": "SWISS"
+      },
+      "operating_carrier": {
+       "iata_code": "LX",
+       "name": "SWISS"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     },
+     {
+      "departing_at": "2026-09-25T12:10:00",
+      "marketing_carrier": {
+       "iata_code": "LX",
+       "name": "SWISS"
+      },
+      "operating_carrier": {
+       "iata_code": "LX",
+       "name": "SWISS"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     },
+     {
+      "departing_at": "2026-09-26T02:00:00",
+      "marketing_carrier": {
+       "iata_code": "LX",
+       "name": "SWISS"
+      },
+      "operating_carrier": {
+       "iata_code": "AI",
+       "name": "Air India"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "off_0000B8iowzbl9nsOFHcRaF",
+  "total_amount": "2705.60",
+  "total_currency": "AUD",
+  "expires_at": "2026-07-26T09:08:04.235253Z",
+  "owner": {
+   "iata_code": "UL",
+   "name": "SriLankan Airlines"
+  },
+  "payment_requirements": {
+   "requires_instant_payment": false,
+   "price_guarantee_expires_at": null,
+   "payment_required_by": "2026-07-27T08:08:04.235221Z"
+  },
+  "slices": [
+   {
+    "fare_brand_name": "Econ Value",
+    "segments": [
+     {
+      "departing_at": "2026-09-15T16:10:00",
+      "marketing_carrier": {
+       "iata_code": "UL",
+       "name": "SriLankan Airlines"
+      },
+      "operating_carrier": {
+       "iata_code": "UL",
+       "name": "SriLankan Airlines"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     },
+     {
+      "departing_at": "2026-09-16T13:10:00",
+      "marketing_carrier": {
+       "iata_code": "UL",
+       "name": "SriLankan Airlines"
+      },
+      "operating_carrier": {
+       "iata_code": "UL",
+       "name": "SriLankan Airlines"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "fare_brand_name": "Econ Value",
+    "segments": [
+     {
+      "departing_at": "2026-09-25T21:30:00",
+      "marketing_carrier": {
+       "iata_code": "UL",
+       "name": "SriLankan Airlines"
+      },
+      "operating_carrier": {
+       "iata_code": "UL",
+       "name": "SriLankan Airlines"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     },
+     {
+      "departing_at": "2026-09-27T00:05:00",
+      "marketing_carrier": {
+       "iata_code": "UL",
+       "name": "SriLankan Airlines"
+      },
+      "operating_carrier": {
+       "iata_code": "UL",
+       "name": "SriLankan Airlines"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "off_0000B8iowzbl9nsOFHcRZt",
+  "total_amount": "2749.21",
+  "total_currency": "AUD",
+  "expires_at": "2026-07-26T09:08:04.235012Z",
+  "owner": {
+   "iata_code": "MH",
+   "name": "Malaysia Airlines"
+  },
+  "payment_requirements": {
+   "requires_instant_payment": false,
+   "price_guarantee_expires_at": null,
+   "payment_required_by": "2026-07-27T08:08:04.234980Z"
+  },
+  "slices": [
+   {
+    "fare_brand_name": "Basic",
+    "segments": [
+     {
+      "departing_at": "2026-09-15T22:10:00",
+      "marketing_carrier": {
+       "iata_code": "MH",
+       "name": "Malaysia Airlines"
+      },
+      "operating_carrier": {
+       "iata_code": "MH",
+       "name": "Malaysia Airlines"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     },
+     {
+      "departing_at": "2026-09-16T09:50:00",
+      "marketing_carrier": {
+       "iata_code": "MH",
+       "name": "Malaysia Airlines"
+      },
+      "operating_carrier": {
+       "iata_code": "MH",
+       "name": "Malaysia Airlines"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "fare_brand_name": "Basic",
+    "segments": [
+     {
+      "departing_at": "2026-09-25T21:35:00",
+      "marketing_carrier": {
+       "iata_code": "MH",
+       "name": "Malaysia Airlines"
+      },
+      "operating_carrier": {
+       "iata_code": "MH",
+       "name": "Malaysia Airlines"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     },
+     {
+      "departing_at": "2026-09-26T20:00:00",
+      "marketing_carrier": {
+       "iata_code": "MH",
+       "name": "Malaysia Airlines"
+      },
+      "operating_carrier": {
+       "iata_code": "MH",
+       "name": "Malaysia Airlines"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "off_0000B8iowzbPB7aoEBSA1b",
+  "total_amount": "3401.43",
+  "total_currency": "AUD",
+  "expires_at": "2026-07-26T09:08:04.234427Z",
+  "owner": {
+   "iata_code": "AI",
+   "name": "Air India"
+  },
+  "payment_requirements": {
+   "requires_instant_payment": false,
+   "price_guarantee_expires_at": null,
+   "payment_required_by": "2026-07-27T08:08:04.234392Z"
+  },
+  "slices": [
+   {
+    "fare_brand_name": "Economy Flex",
+    "segments": [
+     {
+      "departing_at": "2026-09-15T20:35:00",
+      "marketing_carrier": {
+       "iata_code": "AI",
+       "name": "Air India"
+      },
+      "operating_carrier": {
+       "iata_code": "AI",
+       "name": "Air India"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     },
+     {
+      "departing_at": "2026-09-16T12:05:00",
+      "marketing_carrier": {
+       "iata_code": "AI",
+       "name": "Air India"
+      },
+      "operating_carrier": {
+       "iata_code": "AI",
+       "name": "Air India"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "fare_brand_name": "Economy Flex",
+    "segments": [
+     {
+      "departing_at": "2026-09-25T09:45:00",
+      "marketing_carrier": {
+       "iata_code": "AI",
+       "name": "Air India"
+      },
+      "operating_carrier": {
+       "iata_code": "AI",
+       "name": "Air India"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     },
+     {
+      "departing_at": "2026-09-26T02:00:00",
+      "marketing_carrier": {
+       "iata_code": "AI",
+       "name": "Air India"
+      },
+      "operating_carrier": {
+       "iata_code": "AI",
+       "name": "Air India"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "off_0000B8iowzdt1tZsLsc8sz",
+  "total_amount": "1812.91",
+  "total_currency": "AUD",
+  "expires_at": "2026-07-26T09:08:04.237678Z",
+  "owner": {
+   "iata_code": "CZ",
+   "name": "China Southern Airlines"
+  },
+  "payment_requirements": {
+   "requires_instant_payment": false,
+   "price_guarantee_expires_at": null,
+   "payment_required_by": "2026-07-27T08:08:04.237643Z"
+  },
+  "slices": [
+   {
+    "fare_brand_name": null,
+    "segments": [
+     {
+      "departing_at": "2026-09-15T21:45:00",
+      "marketing_carrier": {
+       "iata_code": "CZ",
+       "name": "China Southern Airlines"
+      },
+      "operating_carrier": {
+       "iata_code": "CZ",
+       "name": "China Southern Airlines"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     },
+     {
+      "departing_at": "2026-09-16T13:40:00",
+      "marketing_carrier": {
+       "iata_code": "CZ",
+       "name": "China Southern Airlines"
+      },
+      "operating_carrier": {
+       "iata_code": "CZ",
+       "name": "China Southern Airlines"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "fare_brand_name": null,
+    "segments": [
+     {
+      "departing_at": "2026-09-25T22:10:00",
+      "marketing_carrier": {
+       "iata_code": "CZ",
+       "name": "China Southern Airlines"
+      },
+      "operating_carrier": {
+       "iata_code": "CZ",
+       "name": "China Southern Airlines"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     },
+     {
+      "departing_at": "2026-09-26T20:50:00",
+      "marketing_carrier": {
+       "iata_code": "CZ",
+       "name": "China Southern Airlines"
+      },
+      "operating_carrier": {
+       "iata_code": "CZ",
+       "name": "China Southern Airlines"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "off_0000B8iowzeazG92O4whzy",
+  "total_amount": "12034.58",
+  "total_currency": "AUD",
+  "expires_at": "2026-07-26T09:08:04.239071Z",
+  "owner": {
+   "iata_code": "HR",
+   "name": "Hahn Air"
+  },
+  "payment_requirements": {
+   "requires_instant_payment": false,
+   "price_guarantee_expires_at": null,
+   "payment_required_by": "2026-07-27T08:08:04.239013Z"
+  },
+  "slices": [
+   {
+    "fare_brand_name": "Economy Flex",
+    "segments": [
+     {
+      "departing_at": "2026-09-15T14:05:00",
+      "marketing_carrier": {
+       "iata_code": "CX",
+       "name": "Cathay Pacific"
+      },
+      "operating_carrier": {
+       "iata_code": "CX",
+       "name": "Cathay Pacific"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     },
+     {
+      "departing_at": "2026-09-15T23:15:00",
+      "marketing_carrier": {
+       "iata_code": "CX",
+       "name": "Cathay Pacific"
+      },
+      "operating_carrier": {
+       "iata_code": "CX",
+       "name": "Cathay Pacific"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "fare_brand_name": "Economy Flex",
+    "segments": [
+     {
+      "departing_at": "2026-09-25T19:35:00",
+      "marketing_carrier": {
+       "iata_code": "KE",
+       "name": "Korean Air"
+      },
+      "operating_carrier": {
+       "iata_code": "KE",
+       "name": "Korean Air"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     },
+     {
+      "departing_at": "2026-09-26T19:10:00",
+      "marketing_carrier": {
+       "iata_code": "KE",
+       "name": "Korean Air"
+      },
+      "operating_carrier": {
+       "iata_code": "KE",
+       "name": "Korean Air"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "off_0000B8iowzeF0ZrSMymQRK",
+  "total_amount": "2115.93",
+  "total_currency": "AUD",
+  "expires_at": "2026-07-26T09:08:04.237810Z",
+  "owner": {
+   "iata_code": "OZ",
+   "name": "Asiana Airlines"
+  },
+  "payment_requirements": {
+   "requires_instant_payment": false,
+   "price_guarantee_expires_at": null,
+   "payment_required_by": "2026-07-27T08:08:04.237779Z"
+  },
+  "slices": [
+   {
+    "fare_brand_name": null,
+    "segments": [
+     {
+      "departing_at": "2026-09-15T21:00:00",
+      "marketing_carrier": {
+       "iata_code": "OZ",
+       "name": "Asiana Airlines"
+      },
+      "operating_carrier": {
+       "iata_code": "OZ",
+       "name": "Asiana Airlines"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     },
+     {
+      "departing_at": "2026-09-16T07:50:00",
+      "marketing_carrier": {
+       "iata_code": "OZ",
+       "name": "Asiana Airlines"
+      },
+      "operating_carrier": {
+       "iata_code": "OZ",
+       "name": "Asiana Airlines"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "fare_brand_name": null,
+    "segments": [
+     {
+      "departing_at": "2026-09-25T16:35:00",
+      "marketing_carrier": {
+       "iata_code": "OZ",
+       "name": "Asiana Airlines"
+      },
+      "operating_carrier": {
+       "iata_code": "OZ",
+       "name": "Asiana Airlines"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     },
+     {
+      "departing_at": "2026-09-26T19:10:00",
+      "marketing_carrier": {
+       "iata_code": "OZ",
+       "name": "Asiana Airlines"
+      },
+      "operating_carrier": {
+       "iata_code": "KE",
+       "name": "Korean Air"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "off_0000B8iowzgirLqWUfwPJQ",
+  "total_amount": "14597.70",
+  "total_currency": "AUD",
+  "expires_at": "2026-07-26T09:08:04.244087Z",
+  "owner": {
+   "iata_code": "JL",
+   "name": "JAL"
+  },
+  "payment_requirements": {
+   "requires_instant_payment": false,
+   "price_guarantee_expires_at": null,
+   "payment_required_by": "2026-07-27T08:08:04.244049Z"
+  },
+  "slices": [
+   {
+    "fare_brand_name": "Economy Flex",
+    "segments": [
+     {
+      "departing_at": "2026-09-15T08:55:00",
+      "marketing_carrier": {
+       "iata_code": "JL",
+       "name": "JAL"
+      },
+      "operating_carrier": {
+       "iata_code": "JL",
+       "name": "JAL"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     },
+     {
+      "departing_at": "2026-09-16T00:15:00",
+      "marketing_carrier": {
+       "iata_code": "JL",
+       "name": "JAL"
+      },
+      "operating_carrier": {
+       "iata_code": "JL",
+       "name": "JAL"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "fare_brand_name": "Economy Flex",
+    "segments": [
+     {
+      "departing_at": "2026-09-25T19:20:00",
+      "marketing_carrier": {
+       "iata_code": "JL",
+       "name": "JAL"
+      },
+      "operating_carrier": {
+       "iata_code": "JL",
+       "name": "JAL"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     },
+     {
+      "departing_at": "2026-09-26T19:40:00",
+      "marketing_carrier": {
+       "iata_code": "JL",
+       "name": "JAL"
+      },
+      "operating_carrier": {
+       "iata_code": "JL",
+       "name": "JAL"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "off_0000B8iowziqjRY0bGw6cr",
+  "total_amount": "2593.97",
+  "total_currency": "AUD",
+  "expires_at": "2026-07-26T09:08:04.246904Z",
+  "owner": {
+   "iata_code": "EY",
+   "name": "Etihad Airways"
+  },
+  "payment_requirements": {
+   "requires_instant_payment": false,
+   "price_guarantee_expires_at": null,
+   "payment_required_by": "2026-07-27T08:08:04.246872Z"
+  },
+  "slices": [
+   {
+    "fare_brand_name": "Economy Basic",
+    "segments": [
+     {
+      "departing_at": "2026-09-15T20:50:00",
+      "marketing_carrier": {
+       "iata_code": "EY",
+       "name": "Etihad Airways"
+      },
+      "operating_carrier": {
+       "iata_code": "EY",
+       "name": "Etihad Airways"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     },
+     {
+      "departing_at": "2026-09-16T08:10:00",
+      "marketing_carrier": {
+       "iata_code": "EY",
+       "name": "Etihad Airways"
+      },
+      "operating_carrier": {
+       "iata_code": "EY",
+       "name": "Etihad Airways"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "fare_brand_name": "Economy Basic",
+    "segments": [
+     {
+      "departing_at": "2026-09-25T21:45:00",
+      "marketing_carrier": {
+       "iata_code": "EY",
+       "name": "Etihad Airways"
+      },
+      "operating_carrier": {
+       "iata_code": "EY",
+       "name": "Etihad Airways"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     },
+     {
+      "departing_at": "2026-09-26T10:25:00",
+      "marketing_carrier": {
+       "iata_code": "EY",
+       "name": "Etihad Airways"
+      },
+      "operating_carrier": {
+       "iata_code": "EY",
+       "name": "Etihad Airways"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "off_0000B8iowzjCi7pacN6OAy",
+  "total_amount": "3964.13",
+  "total_currency": "AUD",
+  "expires_at": "2026-07-26T09:08:04.247483Z",
+  "owner": {
+   "iata_code": "EY",
+   "name": "Etihad Airways"
+  },
+  "payment_requirements": {
+   "requires_instant_payment": false,
+   "price_guarantee_expires_at": null,
+   "payment_required_by": "2026-07-27T08:08:04.247442Z"
+  },
+  "slices": [
+   {
+    "fare_brand_name": "Economy Deluxe",
+    "segments": [
+     {
+      "departing_at": "2026-09-15T15:40:00",
+      "marketing_carrier": {
+       "iata_code": "EY",
+       "name": "Etihad Airways"
+      },
+      "operating_carrier": {
+       "iata_code": "EY",
+       "name": "Etihad Airways"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     },
+     {
+      "departing_at": "2026-09-16T02:20:00",
+      "marketing_carrier": {
+       "iata_code": "EY",
+       "name": "Etihad Airways"
+      },
+      "operating_carrier": {
+       "iata_code": "EY",
+       "name": "Etihad Airways"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "fare_brand_name": "Economy Deluxe",
+    "segments": [
+     {
+      "departing_at": "2026-09-25T20:45:00",
+      "marketing_carrier": {
+       "iata_code": "EY",
+       "name": "Etihad Airways"
+      },
+      "operating_carrier": {
+       "iata_code": "EY",
+       "name": "Etihad Airways"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     },
+     {
+      "departing_at": "2026-09-26T10:25:00",
+      "marketing_carrier": {
+       "iata_code": "EY",
+       "name": "Etihad Airways"
+      },
+      "operating_carrier": {
+       "iata_code": "EY",
+       "name": "Etihad Airways"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "off_0000B8iowzjufUOkeZQxHk",
+  "total_amount": "18243.76",
+  "total_currency": "AUD",
+  "expires_at": "2026-07-26T09:08:04.248790Z",
+  "owner": {
+   "iata_code": "NH",
+   "name": "ANA"
+  },
+  "payment_requirements": {
+   "requires_instant_payment": false,
+   "price_guarantee_expires_at": null,
+   "payment_required_by": "2026-07-27T08:08:04.248740Z"
+  },
+  "slices": [
+   {
+    "fare_brand_name": "Economy Fully Flex",
+    "segments": [
+     {
+      "departing_at": "2026-09-15T20:55:00",
+      "marketing_carrier": {
+       "iata_code": "NH",
+       "name": "ANA"
+      },
+      "operating_carrier": {
+       "iata_code": "NH",
+       "name": "ANA"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     },
+     {
+      "departing_at": "2026-09-16T09:55:00",
+      "marketing_carrier": {
+       "iata_code": "NH",
+       "name": "ANA"
+      },
+      "operating_carrier": {
+       "iata_code": "NH",
+       "name": "ANA"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "fare_brand_name": null,
+    "segments": [
+     {
+      "departing_at": "2026-09-25T16:35:00",
+      "marketing_carrier": {
+       "iata_code": "OZ",
+       "name": "Asiana Airlines"
+      },
+      "operating_carrier": {
+       "iata_code": "OZ",
+       "name": "Asiana Airlines"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     },
+     {
+      "departing_at": "2026-09-26T19:10:00",
+      "marketing_carrier": {
+       "iata_code": "OZ",
+       "name": "Asiana Airlines"
+      },
+      "operating_carrier": {
+       "iata_code": "KE",
+       "name": "Korean Air"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "off_0000B8iowzlKaDX4iy65UO",
+  "total_amount": "3981.64",
+  "total_currency": "AUD",
+  "expires_at": "2026-07-26T09:08:04.249659Z",
+  "owner": {
+   "iata_code": "QR",
+   "name": "Qatar Airways"
+  },
+  "payment_requirements": {
+   "requires_instant_payment": false,
+   "price_guarantee_expires_at": null,
+   "payment_required_by": "2026-07-27T08:08:04.249629Z"
+  },
+  "slices": [
+   {
+    "fare_brand_name": "Economy Comfort",
+    "segments": [
+     {
+      "departing_at": "2026-09-15T20:45:00",
+      "marketing_carrier": {
+       "iata_code": "QR",
+       "name": "Qatar Airways"
+      },
+      "operating_carrier": {
+       "iata_code": "QR",
+       "name": "Qatar Airways"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     },
+     {
+      "departing_at": "2026-09-16T08:00:00",
+      "marketing_carrier": {
+       "iata_code": "QR",
+       "name": "Qatar Airways"
+      },
+      "operating_carrier": {
+       "iata_code": "QR",
+       "name": "Qatar Airways"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "fare_brand_name": "Economy Comfort",
+    "segments": [
+     {
+      "departing_at": "2026-09-25T08:25:00",
+      "marketing_carrier": {
+       "iata_code": "QR",
+       "name": "Qatar Airways"
+      },
+      "operating_carrier": {
+       "iata_code": "QR",
+       "name": "Qatar Airways"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     },
+     {
+      "departing_at": "2026-09-25T20:05:00",
+      "marketing_carrier": {
+       "iata_code": "QR",
+       "name": "Qatar Airways"
+      },
+      "operating_carrier": {
+       "iata_code": "QR",
+       "name": "Qatar Airways"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "off_0000B8iowzlKaDX4iy65Uv",
+  "total_amount": "11687.37",
+  "total_currency": "AUD",
+  "expires_at": "2026-07-26T09:08:04.249989Z",
+  "owner": {
+   "iata_code": "HR",
+   "name": "Hahn Air"
+  },
+  "payment_requirements": {
+   "requires_instant_payment": false,
+   "price_guarantee_expires_at": null,
+   "payment_required_by": "2026-07-27T08:08:04.249957Z"
+  },
+  "slices": [
+   {
+    "fare_brand_name": "Economy Light",
+    "segments": [
+     {
+      "departing_at": "2026-09-15T21:55:00",
+      "marketing_carrier": {
+       "iata_code": "CX",
+       "name": "Cathay Pacific"
+      },
+      "operating_carrier": {
+       "iata_code": "CX",
+       "name": "Cathay Pacific"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     },
+     {
+      "departing_at": "2026-09-16T08:05:00",
+      "marketing_carrier": {
+       "iata_code": "CX",
+       "name": "Cathay Pacific"
+      },
+      "operating_carrier": {
+       "iata_code": "CX",
+       "name": "Cathay Pacific"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "fare_brand_name": "Economy Flex",
+    "segments": [
+     {
+      "departing_at": "2026-09-25T19:35:00",
+      "marketing_carrier": {
+       "iata_code": "KE",
+       "name": "Korean Air"
+      },
+      "operating_carrier": {
+       "iata_code": "KE",
+       "name": "Korean Air"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     },
+     {
+      "departing_at": "2026-09-26T19:10:00",
+      "marketing_carrier": {
+       "iata_code": "KE",
+       "name": "Korean Air"
+      },
+      "operating_carrier": {
+       "iata_code": "KE",
+       "name": "Korean Air"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "off_0000B8iowznoQzW8qfG4MF",
+  "total_amount": "13985.51",
+  "total_currency": "AUD",
+  "expires_at": "2026-07-26T09:08:04.254787Z",
+  "owner": {
+   "iata_code": "OZ",
+   "name": "Asiana Airlines"
+  },
+  "payment_requirements": {
+   "requires_instant_payment": false,
+   "price_guarantee_expires_at": null,
+   "payment_required_by": "2026-07-27T08:08:04.254753Z"
+  },
+  "slices": [
+   {
+    "fare_brand_name": null,
+    "segments": [
+     {
+      "departing_at": "2026-09-15T07:55:00",
+      "marketing_carrier": {
+       "iata_code": "OZ",
+       "name": "Asiana Airlines"
+      },
+      "operating_carrier": {
+       "iata_code": "KE",
+       "name": "Korean Air"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     },
+     {
+      "departing_at": "2026-09-16T07:50:00",
+      "marketing_carrier": {
+       "iata_code": "OZ",
+       "name": "Asiana Airlines"
+      },
+      "operating_carrier": {
+       "iata_code": "OZ",
+       "name": "Asiana Airlines"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "fare_brand_name": "Economy Fully Flex",
+    "segments": [
+     {
+      "departing_at": "2026-09-25T19:00:00",
+      "marketing_carrier": {
+       "iata_code": "NH",
+       "name": "ANA"
+      },
+      "operating_carrier": {
+       "iata_code": "NH",
+       "name": "ANA"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     },
+     {
+      "departing_at": "2026-09-26T22:45:00",
+      "marketing_carrier": {
+       "iata_code": "NH",
+       "name": "ANA"
+      },
+      "operating_carrier": {
+       "iata_code": "NH",
+       "name": "ANA"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "off_0000B8iowzoAPfnirlQLuY",
+  "total_amount": "16772.45",
+  "total_currency": "AUD",
+  "expires_at": "2026-07-26T09:08:04.255122Z",
+  "owner": {
+   "iata_code": "MH",
+   "name": "Malaysia Airlines"
+  },
+  "payment_requirements": {
+   "requires_instant_payment": false,
+   "price_guarantee_expires_at": null,
+   "payment_required_by": "2026-07-27T08:08:04.255085Z"
+  },
+  "slices": [
+   {
+    "fare_brand_name": "Economy Flex",
+    "segments": [
+     {
+      "departing_at": "2026-09-15T14:05:00",
+      "marketing_carrier": {
+       "iata_code": "CX",
+       "name": "Cathay Pacific"
+      },
+      "operating_carrier": {
+       "iata_code": "CX",
+       "name": "Cathay Pacific"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     },
+     {
+      "departing_at": "2026-09-15T23:15:00",
+      "marketing_carrier": {
+       "iata_code": "CX",
+       "name": "Cathay Pacific"
+      },
+      "operating_carrier": {
+       "iata_code": "CX",
+       "name": "Cathay Pacific"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "fare_brand_name": null,
+    "segments": [
+     {
+      "departing_at": "2026-09-25T11:00:00",
+      "marketing_carrier": {
+       "iata_code": "MH",
+       "name": "Malaysia Airlines"
+      },
+      "operating_carrier": {
+       "iata_code": "MH",
+       "name": "Malaysia Airlines"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     },
+     {
+      "departing_at": "2026-09-26T09:10:00",
+      "marketing_carrier": {
+       "iata_code": "MH",
+       "name": "Malaysia Airlines"
+      },
+      "operating_carrier": {
+       "iata_code": "MH",
+       "name": "Malaysia Airlines"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "off_0000B8iowzUfaACltIImWG",
+  "total_amount": "4612.34",
+  "total_currency": "AUD",
+  "expires_at": "2026-07-26T09:08:04.225684Z",
+  "owner": {
+   "iata_code": "UL",
+   "name": "SriLankan Airlines"
+  },
+  "payment_requirements": {
+   "requires_instant_payment": false,
+   "price_guarantee_expires_at": null,
+   "payment_required_by": "2026-07-27T08:08:04.225597Z"
+  },
+  "slices": [
+   {
+    "fare_brand_name": "Economy Flex",
+    "segments": [
+     {
+      "departing_at": "2026-09-15T16:10:00",
+      "marketing_carrier": {
+       "iata_code": "UL",
+       "name": "SriLankan Airlines"
+      },
+      "operating_carrier": {
+       "iata_code": "UL",
+       "name": "SriLankan Airlines"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     },
+     {
+      "departing_at": "2026-09-16T13:10:00",
+      "marketing_carrier": {
+       "iata_code": "UL",
+       "name": "SriLankan Airlines"
+      },
+      "operating_carrier": {
+       "iata_code": "UL",
+       "name": "SriLankan Airlines"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "fare_brand_name": "Economy Flex",
+    "segments": [
+     {
+      "departing_at": "2026-09-25T21:30:00",
+      "marketing_carrier": {
+       "iata_code": "UL",
+       "name": "SriLankan Airlines"
+      },
+      "operating_carrier": {
+       "iata_code": "UL",
+       "name": "SriLankan Airlines"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     },
+     {
+      "departing_at": "2026-09-27T00:05:00",
+      "marketing_carrier": {
+       "iata_code": "UL",
+       "name": "SriLankan Airlines"
+      },
+      "operating_carrier": {
+       "iata_code": "UL",
+       "name": "SriLankan Airlines"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "off_0000B8iowzvbxzkvEquIWG",
+  "total_amount": "12564.99",
+  "total_currency": "AUD",
+  "expires_at": "2026-07-26T09:08:04.267356Z",
+  "owner": {
+   "iata_code": "CZ",
+   "name": "China Southern Airlines"
+  },
+  "payment_requirements": {
+   "requires_instant_payment": false,
+   "price_guarantee_expires_at": null,
+   "payment_required_by": "2026-07-27T08:08:04.267328Z"
+  },
+  "slices": [
+   {
+    "fare_brand_name": null,
+    "segments": [
+     {
+      "departing_at": "2026-09-15T21:45:00",
+      "marketing_carrier": {
+       "iata_code": "CZ",
+       "name": "China Southern Airlines"
+      },
+      "operating_carrier": {
+       "iata_code": "CZ",
+       "name": "China Southern Airlines"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     },
+     {
+      "departing_at": "2026-09-16T13:40:00",
+      "marketing_carrier": {
+       "iata_code": "CZ",
+       "name": "China Southern Airlines"
+      },
+      "operating_carrier": {
+       "iata_code": "CZ",
+       "name": "China Southern Airlines"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "fare_brand_name": "Economy Deluxe",
+    "segments": [
+     {
+      "departing_at": "2026-09-25T09:30:00",
+      "marketing_carrier": {
+       "iata_code": "EY",
+       "name": "Etihad Airways"
+      },
+      "operating_carrier": {
+       "iata_code": "EY",
+       "name": "Etihad Airways"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     },
+     {
+      "departing_at": "2026-09-25T21:05:00",
+      "marketing_carrier": {
+       "iata_code": "EY",
+       "name": "Etihad Airways"
+      },
+      "operating_carrier": {
+       "iata_code": "EY",
+       "name": "Etihad Airways"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "off_0000B8iowzvxwg2VFx4a4m",
+  "total_amount": "7028.69",
+  "total_currency": "AUD",
+  "expires_at": "2026-07-26T09:08:04.270133Z",
+  "owner": {
+   "iata_code": "CA",
+   "name": "Air China"
+  },
+  "payment_requirements": {
+   "requires_instant_payment": false,
+   "price_guarantee_expires_at": null,
+   "payment_required_by": "2026-07-27T08:08:04.270096Z"
+  },
+  "slices": [
+   {
+    "fare_brand_name": "Economy Flex",
+    "segments": [
+     {
+      "departing_at": "2026-09-15T19:40:00",
+      "marketing_carrier": {
+       "iata_code": "CA",
+       "name": "Air China"
+      },
+      "operating_carrier": {
+       "iata_code": "CA",
+       "name": "Air China"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     },
+     {
+      "departing_at": "2026-09-16T13:35:00",
+      "marketing_carrier": {
+       "iata_code": "CA",
+       "name": "Air China"
+      },
+      "operating_carrier": {
+       "iata_code": "CA",
+       "name": "Air China"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "fare_brand_name": null,
+    "segments": [
+     {
+      "departing_at": "2026-09-25T20:25:00",
+      "marketing_carrier": {
+       "iata_code": "CA",
+       "name": "Air China"
+      },
+      "operating_carrier": {
+       "iata_code": "CA",
+       "name": "Air China"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     },
+     {
+      "departing_at": "2026-09-27T01:40:00",
+      "marketing_carrier": {
+       "iata_code": "CA",
+       "name": "Air China"
+      },
+      "operating_carrier": {
+       "iata_code": "CA",
+       "name": "Air China"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "off_0000B8iowzwfu2bfI9P9At",
+  "total_amount": "14597.70",
+  "total_currency": "AUD",
+  "expires_at": "2026-07-26T09:08:04.270952Z",
+  "owner": {
+   "iata_code": "JL",
+   "name": "JAL"
+  },
+  "payment_requirements": {
+   "requires_instant_payment": false,
+   "price_guarantee_expires_at": null,
+   "payment_required_by": "2026-07-27T08:08:04.270901Z"
+  },
+  "slices": [
+   {
+    "fare_brand_name": "Economy Flex",
+    "segments": [
+     {
+      "departing_at": "2026-09-15T08:55:00",
+      "marketing_carrier": {
+       "iata_code": "JL",
+       "name": "JAL"
+      },
+      "operating_carrier": {
+       "iata_code": "JL",
+       "name": "JAL"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     },
+     {
+      "departing_at": "2026-09-16T00:15:00",
+      "marketing_carrier": {
+       "iata_code": "JL",
+       "name": "JAL"
+      },
+      "operating_carrier": {
+       "iata_code": "JL",
+       "name": "JAL"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "fare_brand_name": "Economy Flex",
+    "segments": [
+     {
+      "departing_at": "2026-09-25T13:05:00",
+      "marketing_carrier": {
+       "iata_code": "JL",
+       "name": "JAL"
+      },
+      "operating_carrier": {
+       "iata_code": "BA",
+       "name": "British Airways"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     },
+     {
+      "departing_at": "2026-09-26T19:40:00",
+      "marketing_carrier": {
+       "iata_code": "JL",
+       "name": "JAL"
+      },
+      "operating_carrier": {
+       "iata_code": "JL",
+       "name": "JAL"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "off_0000B8iowzwJvMK5H3ErcW",
+  "total_amount": "2647.06",
+  "total_currency": "AUD",
+  "expires_at": "2026-07-26T09:08:04.270257Z",
+  "owner": {
+   "iata_code": "QR",
+   "name": "Qatar Airways"
+  },
+  "payment_requirements": {
+   "requires_instant_payment": false,
+   "price_guarantee_expires_at": null,
+   "payment_required_by": "2026-07-27T08:08:04.270223Z"
+  },
+  "slices": [
+   {
+    "fare_brand_name": "Economy Classic",
+    "segments": [
+     {
+      "departing_at": "2026-09-15T14:50:00",
+      "marketing_carrier": {
+       "iata_code": "QR",
+       "name": "Qatar Airways"
+      },
+      "operating_carrier": {
+       "iata_code": "VA",
+       "name": "Virgin Australia"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     },
+     {
+      "departing_at": "2026-09-16T01:15:00",
+      "marketing_carrier": {
+       "iata_code": "QR",
+       "name": "Qatar Airways"
+      },
+      "operating_carrier": {
+       "iata_code": "QR",
+       "name": "Qatar Airways"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "fare_brand_name": "Economy Classic",
+    "segments": [
+     {
+      "departing_at": "2026-09-25T21:55:00",
+      "marketing_carrier": {
+       "iata_code": "QR",
+       "name": "Qatar Airways"
+      },
+      "operating_carrier": {
+       "iata_code": "QR",
+       "name": "Qatar Airways"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     },
+     {
+      "departing_at": "2026-09-26T09:25:00",
+      "marketing_carrier": {
+       "iata_code": "QR",
+       "name": "Qatar Airways"
+      },
+      "operating_carrier": {
+       "iata_code": "VA",
+       "name": "Virgin Australia"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "off_0000B8iowzWnSFuFztITqG",
+  "total_amount": "1875.18",
+  "total_currency": "AUD",
+  "expires_at": "2026-07-26T09:08:04.227966Z",
+  "owner": {
+   "iata_code": "NH",
+   "name": "ANA"
+  },
+  "payment_requirements": {
+   "requires_instant_payment": false,
+   "price_guarantee_expires_at": null,
+   "payment_required_by": "2026-07-27T08:08:04.227935Z"
+  },
+  "slices": [
+   {
+    "fare_brand_name": "Economy Value",
+    "segments": [
+     {
+      "departing_at": "2026-09-15T11:45:00",
+      "marketing_carrier": {
+       "iata_code": "NH",
+       "name": "ANA"
+      },
+      "operating_carrier": {
+       "iata_code": "NH",
+       "name": "ANA"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     },
+     {
+      "departing_at": "2026-09-16T09:55:00",
+      "marketing_carrier": {
+       "iata_code": "NH",
+       "name": "ANA"
+      },
+      "operating_carrier": {
+       "iata_code": "NH",
+       "name": "ANA"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "fare_brand_name": "Economy Value",
+    "segments": [
+     {
+      "departing_at": "2026-09-25T19:00:00",
+      "marketing_carrier": {
+       "iata_code": "NH",
+       "name": "ANA"
+      },
+      "operating_carrier": {
+       "iata_code": "NH",
+       "name": "ANA"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     },
+     {
+      "departing_at": "2026-09-26T22:45:00",
+      "marketing_carrier": {
+       "iata_code": "NH",
+       "name": "ANA"
+      },
+      "operating_carrier": {
+       "iata_code": "NH",
+       "name": "ANA"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "off_0000B8iowzynm8J9OkOqUK",
+  "total_amount": "3177.91",
+  "total_currency": "AUD",
+  "expires_at": "2026-07-26T09:08:04.273857Z",
+  "owner": {
+   "iata_code": "TG",
+   "name": "Thai Airways"
+  },
+  "payment_requirements": {
+   "requires_instant_payment": false,
+   "price_guarantee_expires_at": null,
+   "payment_required_by": "2026-07-27T08:08:04.273803Z"
+  },
+  "slices": [
+   {
+    "fare_brand_name": null,
+    "segments": [
+     {
+      "departing_at": "2026-09-15T14:35:00",
+      "marketing_carrier": {
+       "iata_code": "TG",
+       "name": "Thai Airways"
+      },
+      "operating_carrier": {
+       "iata_code": "TG",
+       "name": "Thai Airways"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     },
+     {
+      "departing_at": "2026-09-16T00:45:00",
+      "marketing_carrier": {
+       "iata_code": "TG",
+       "name": "Thai Airways"
+      },
+      "operating_carrier": {
+       "iata_code": "TG",
+       "name": "Thai Airways"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "fare_brand_name": null,
+    "segments": [
+     {
+      "departing_at": "2026-09-25T21:25:00",
+      "marketing_carrier": {
+       "iata_code": "TG",
+       "name": "Thai Airways"
+      },
+      "operating_carrier": {
+       "iata_code": "TG",
+       "name": "Thai Airways"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     },
+     {
+      "departing_at": "2026-09-26T22:20:00",
+      "marketing_carrier": {
+       "iata_code": "TG",
+       "name": "Thai Airways"
+      },
+      "operating_carrier": {
+       "iata_code": "TG",
+       "name": "Thai Airways"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "off_0000B8iowzynm8J9OkOqUV",
+  "total_amount": "3177.91",
+  "total_currency": "AUD",
+  "expires_at": "2026-07-26T09:08:04.274011Z",
+  "owner": {
+   "iata_code": "TG",
+   "name": "Thai Airways"
+  },
+  "payment_requirements": {
+   "requires_instant_payment": false,
+   "price_guarantee_expires_at": null,
+   "payment_required_by": "2026-07-27T08:08:04.273972Z"
+  },
+  "slices": [
+   {
+    "fare_brand_name": null,
+    "segments": [
+     {
+      "departing_at": "2026-09-15T10:00:00",
+      "marketing_carrier": {
+       "iata_code": "TG",
+       "name": "Thai Airways"
+      },
+      "operating_carrier": {
+       "iata_code": "TG",
+       "name": "Thai Airways"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     },
+     {
+      "departing_at": "2026-09-16T00:45:00",
+      "marketing_carrier": {
+       "iata_code": "TG",
+       "name": "Thai Airways"
+      },
+      "operating_carrier": {
+       "iata_code": "TG",
+       "name": "Thai Airways"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "fare_brand_name": null,
+    "segments": [
+     {
+      "departing_at": "2026-09-25T12:30:00",
+      "marketing_carrier": {
+       "iata_code": "TG",
+       "name": "Thai Airways"
+      },
+      "operating_carrier": {
+       "iata_code": "TG",
+       "name": "Thai Airways"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     },
+     {
+      "departing_at": "2026-09-26T08:30:00",
+      "marketing_carrier": {
+       "iata_code": "TG",
+       "name": "Thai Airways"
+      },
+      "operating_carrier": {
+       "iata_code": "TG",
+       "name": "Thai Airways"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "off_0000B8iowzYZLfKA5O7tbE",
+  "total_amount": "2851.94",
+  "total_currency": "AUD",
+  "expires_at": "2026-07-26T09:08:04.228952Z",
+  "owner": {
+   "iata_code": "AI",
+   "name": "Air India"
+  },
+  "payment_requirements": {
+   "requires_instant_payment": false,
+   "price_guarantee_expires_at": null,
+   "payment_required_by": "2026-07-27T08:08:04.228922Z"
+  },
+  "slices": [
+   {
+    "fare_brand_name": "Economy Value",
+    "segments": [
+     {
+      "departing_at": "2026-09-15T20:35:00",
+      "marketing_carrier": {
+       "iata_code": "AI",
+       "name": "Air India"
+      },
+      "operating_carrier": {
+       "iata_code": "AI",
+       "name": "Air India"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     },
+     {
+      "departing_at": "2026-09-16T12:05:00",
+      "marketing_carrier": {
+       "iata_code": "AI",
+       "name": "Air India"
+      },
+      "operating_carrier": {
+       "iata_code": "AI",
+       "name": "Air India"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "fare_brand_name": "Economy Value",
+    "segments": [
+     {
+      "departing_at": "2026-09-25T09:45:00",
+      "marketing_carrier": {
+       "iata_code": "AI",
+       "name": "Air India"
+      },
+      "operating_carrier": {
+       "iata_code": "AI",
+       "name": "Air India"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     },
+     {
+      "departing_at": "2026-09-26T02:00:00",
+      "marketing_carrier": {
+       "iata_code": "AI",
+       "name": "Air India"
+      },
+      "operating_carrier": {
+       "iata_code": "AI",
+       "name": "Air India"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "off_0000B8iowzZHJ1tK7aSShk",
+  "total_amount": "10050.22",
+  "total_currency": "AUD",
+  "expires_at": "2026-07-26T09:08:04.229462Z",
+  "owner": {
+   "iata_code": "CA",
+   "name": "Air China"
+  },
+  "payment_requirements": {
+   "requires_instant_payment": false,
+   "price_guarantee_expires_at": null,
+   "payment_required_by": "2026-07-27T08:08:04.229432Z"
+  },
+  "slices": [
+   {
+    "fare_brand_name": "Economy Latitude",
+    "segments": [
+     {
+      "departing_at": "2026-09-15T19:40:00",
+      "marketing_carrier": {
+       "iata_code": "CA",
+       "name": "Air China"
+      },
+      "operating_carrier": {
+       "iata_code": "CA",
+       "name": "Air China"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     },
+     {
+      "departing_at": "2026-09-16T13:35:00",
+      "marketing_carrier": {
+       "iata_code": "CA",
+       "name": "Air China"
+      },
+      "operating_carrier": {
+       "iata_code": "CA",
+       "name": "Air China"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "fare_brand_name": "Economy Latitude",
+    "segments": [
+     {
+      "departing_at": "2026-09-25T22:40:00",
+      "marketing_carrier": {
+       "iata_code": "CA",
+       "name": "Air China"
+      },
+      "operating_carrier": {
+       "iata_code": "CA",
+       "name": "Air China"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     },
+     {
+      "departing_at": "2026-09-27T01:40:00",
+      "marketing_carrier": {
+       "iata_code": "CA",
+       "name": "Air China"
+      },
+      "operating_carrier": {
+       "iata_code": "CA",
+       "name": "Air China"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "off_0000B8iox8JInnSZEe3KYS",
+  "total_amount": "7652.34",
+  "total_currency": "AUD",
+  "expires_at": "2026-07-26T08:38:03.000000Z",
+  "owner": {
+   "iata_code": "SQ",
+   "name": "Singapore Airlines"
+  },
+  "payment_requirements": {
+   "requires_instant_payment": true,
+   "price_guarantee_expires_at": null,
+   "payment_required_by": null
+  },
+  "slices": [
+   {
+    "fare_brand_name": "Premium Economy Flexi",
+    "segments": [
+     {
+      "departing_at": "2026-09-15T18:00:00",
+      "marketing_carrier": {
+       "iata_code": "SQ",
+       "name": "Singapore Airlines"
+      },
+      "operating_carrier": {
+       "iata_code": "SQ",
+       "name": "Singapore Airlines"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     },
+     {
+      "departing_at": "2026-09-16T09:00:00",
+      "marketing_carrier": {
+       "iata_code": "SQ",
+       "name": "Singapore Airlines"
+      },
+      "operating_carrier": {
+       "iata_code": "SQ",
+       "name": "Singapore Airlines"
+      },
+      "passengers": [
+       {
+        "cabin_class": "premium_economy"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "fare_brand_name": "Premium Economy Flexi",
+    "segments": [
+     {
+      "departing_at": "2026-09-25T22:05:00",
+      "marketing_carrier": {
+       "iata_code": "SQ",
+       "name": "Singapore Airlines"
+      },
+      "operating_carrier": {
+       "iata_code": "SQ",
+       "name": "Singapore Airlines"
+      },
+      "passengers": [
+       {
+        "cabin_class": "premium_economy"
+       }
+      ]
+     },
+     {
+      "departing_at": "2026-09-27T07:15:00",
+      "marketing_carrier": {
+       "iata_code": "SQ",
+       "name": "Singapore Airlines"
+      },
+      "operating_carrier": {
+       "iata_code": "SQ",
+       "name": "Singapore Airlines"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "off_0000B8ioxAaOLEJmIE40Sx",
+  "total_amount": "2526.54",
+  "total_currency": "AUD",
+  "expires_at": "2026-07-26T08:38:03.000000Z",
+  "owner": {
+   "iata_code": "SQ",
+   "name": "Singapore Airlines"
+  },
+  "payment_requirements": {
+   "requires_instant_payment": true,
+   "price_guarantee_expires_at": null,
+   "payment_required_by": null
+  },
+  "slices": [
+   {
+    "fare_brand_name": "Economy Value",
+    "segments": [
+     {
+      "departing_at": "2026-09-15T11:00:00",
+      "marketing_carrier": {
+       "iata_code": "SQ",
+       "name": "Singapore Airlines"
+      },
+      "operating_carrier": {
+       "iata_code": "SQ",
+       "name": "Singapore Airlines"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     },
+     {
+      "departing_at": "2026-09-15T23:00:00",
+      "marketing_carrier": {
+       "iata_code": "SQ",
+       "name": "Singapore Airlines"
+      },
+      "operating_carrier": {
+       "iata_code": "SQ",
+       "name": "Singapore Airlines"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "fare_brand_name": "Economy Value",
+    "segments": [
+     {
+      "departing_at": "2026-09-25T22:05:00",
+      "marketing_carrier": {
+       "iata_code": "SQ",
+       "name": "Singapore Airlines"
+      },
+      "operating_carrier": {
+       "iata_code": "SQ",
+       "name": "Singapore Airlines"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     },
+     {
+      "departing_at": "2026-09-27T07:15:00",
+      "marketing_carrier": {
+       "iata_code": "SQ",
+       "name": "Singapore Airlines"
+      },
+      "operating_carrier": {
+       "iata_code": "SQ",
+       "name": "Singapore Airlines"
+      },
+      "passengers": [
+       {
+        "cabin_class": "economy"
+       }
+      ]
+     }
+    ]
+   }
+  ]
+ }
+]

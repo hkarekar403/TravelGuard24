@@ -9,10 +9,7 @@
  *
  *   npx tsx src/cli/rehearse.ts
  *
- * The policy evaluator here is a deliberately minimal stand-in — enough to produce a real
- * PolicyDecision from live offers so the orchestrator has something to gate on. The full
- * engine is specified in docs/policy-engine.md and is built separately; this file must not
- * become its second implementation.
+ * Uses the real policy engine, so a run exercises the actual gate rather than a stand-in.
  */
 
 import { spawn } from 'node:child_process';
@@ -23,8 +20,8 @@ import { createPravaClient } from '../prava/client.js';
 import { createSimulatedMerchant } from '../merchant/simulated-merchant.js';
 import { createHashChainAudit } from '../audit/hash-chain.js';
 import { bookTrip } from '../orchestrator/orchestrator.js';
-import { toMinorUnits } from '../money.js';
-import type { Evaluate, OfferEvaluation, Policy } from '../policy/types.js';
+import { evaluate } from '../policy/engine.js';
+import type { Policy } from '../policy/types.js';
 import type { Clock, PravaPort } from '../orchestrator/ports.js';
 
 const policy: Policy = {
@@ -35,50 +32,6 @@ const policy: Policy = {
   allowedCabinClasses: ['economy'],
   minAdvanceDays: 14,
   vendorAllowlist: ['ZZ', 'IB', 'BA', 'AA', 'SQ', 'LH', 'QR', 'EY', 'NH', 'JL', 'TG', 'AI'],
-};
-
-/** Minimal stand-in for the real engine. See the file header. */
-const evaluate: Evaluate = (offers, p, now) => {
-  const evaluated: OfferEvaluation[] = offers.map((o) => {
-    const cabins = o.slices.flatMap((s) => s.segments.flatMap((g) => g.passengers.map((x) => x.cabin_class)));
-    const departure = o.slices[0]?.segments[0]?.departing_at?.slice(0, 10) ?? '';
-    const days = Math.floor((Date.parse(`${departure}T00:00:00Z`) - Date.parse(now.toISOString().slice(0, 10) + 'T00:00:00Z')) / 86_400_000);
-    const minor = toMinorUnits(o.total_amount);
-
-    const failed: OfferEvaluation['failedRules'] = [];
-    if (!cabins.every((c) => p.allowedCabinClasses.includes(c))) failed.push('cabin_class');
-    if (!p.vendorAllowlist.includes(o.owner.iata_code)) failed.push('vendor_allowlist');
-    if (days < p.minAdvanceDays) failed.push('advance_purchase');
-    if (minor > p.budgetCapMinor) failed.push('budget_cap');
-
-    return {
-      offerId: o.id,
-      totalMinor: minor,
-      totalAmount: o.total_amount,
-      currency: o.total_currency,
-      carrier: { iata: o.owner.iata_code, name: o.owner.name },
-      rules: [],
-      compliant: failed.length === 0,
-      failedRules: failed,
-    };
-  });
-
-  const compliant = evaluated
-    .filter((e) => e.compliant)
-    .sort((a, b) => a.totalMinor - b.totalMinor || (a.offerId < b.offerId ? -1 : 1));
-
-  return {
-    outcome: compliant.length > 0 ? 'APPROVED' : 'BLOCKED',
-    policyVersion: p.version,
-    evaluatedAt: now.toISOString(),
-    totalOffers: offers.length,
-    funnel: [],
-    compliant,
-    selected: compliant[0] ?? null,
-    runnerUp: compliant[1] ?? null,
-    nearestMiss: null,
-    cheapestOverall: null,
-  };
 };
 
 const clock: Clock = {
