@@ -1,0 +1,9 @@
+{
+  "version": "v1",
+  "org": "Acme Corp",
+  "currency": "AUD",
+  "budgetCapMinor": 130000,
+  "allowedCabinClasses": ["economy"],
+  "minAdvanceDays": 14,
+  "vendorAllowlist": ["ZZ", "IB", "BA", "AA", "SQ", "LH", "QR", "EY", "NH", "JL", "TG", "AI"]
+}
