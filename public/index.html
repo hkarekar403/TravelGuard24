@@ -43,6 +43,10 @@
   .step.stop .hd .n{border-color:var(--warn);color:var(--warn)}
   .step .hd .sum{margin-left:auto;font-family:var(--mono);font-size:11px;text-transform:none;letter-spacing:0;color:var(--dim)}
   .step .bd{padding:0 13px 12px 39px}
+  /* A collapsed step is a header and nothing else. Left as-is, nine of them carry
+     ~108px of invisible padding between them and push the confirmed block off screen —
+     and that block is the submission screenshot. */
+  .step .bd:empty{padding:0}
 
   .tick{font-family:var(--mono);font-size:12px;color:var(--dim);line-height:1.85}
   .tick b{color:var(--ink);font-weight:500}
@@ -393,7 +397,7 @@ new EventSource('/events').onmessage = (m) => {
          <tr><td class="pass">✓</td><td class="lbl">PNR</td><td><b>${e.pnr}</b></td></tr>
          <tr><td class="pass">✓</td><td class="lbl">E-ticket</td><td>issued${e.eTicketNumber?` <span class="meta">(${e.eTicketNumber})</span>`:''}</td></tr>
          <tr><td class="pass">✓</td><td class="lbl">Mandate</td><td>closed · visa_confirmation SUCCESS</td></tr>
-         <tr><td class="pass">✓</td><td class="lbl">Audit</td><td>${entries} entries · chain verified</td></tr>
+         <tr><td class="pass">✓</td><td class="lbl">Audit</td><td><span id="ac">${entries}</span> entries · chain verified</td></tr>
        </table>`;
     close('done', undefined);
     document.querySelector('#s-done .hd .n').textContent='✓';
@@ -425,6 +429,11 @@ new EventSource('/events').onmessage = (m) => {
   if(e.type==='finished'){
     $('#go').disabled=false;
     clearInterval(ticker); ticker=null;
+    // Restated once everything has landed. Reading the count while rendering the
+    // confirmed block depends on the last audit entry having arrived first, which is
+    // true of the orchestrator today and is not a thing this screen should rely on —
+    // a confirmation panel that miscounts the evidence undermines the evidence.
+    const ac=document.getElementById('ac'); if(ac) ac.textContent=String(entries);
     try{ checkout?.close(); }catch{} checkout=null;
     const halt = HALTS[e.status];
     if(halt){
