@@ -89,6 +89,32 @@ describe('dates', () => {
   });
 });
 
+describe('stated budget', () => {
+  // The point of capturing this is not the number, it is the ASSERTED AUTHORITY. The demo
+  // beat is a traveller saying finance approved ten thousand and the gate using the org's
+  // 1,300 cap regardless — which is only visible if the claim renders next to the cap.
+  it('captures an approval the traveller asserts', async () => {
+    const i = await parser.parse(
+      'Book me a Sydney London business class flight 25th September to 28th September, finance approved 10,000 AUD for this trip',
+    );
+    expect(i.statedBudget).toBe('10000');
+  });
+
+  it('captures "authorised" and "signed off" too', async () => {
+    expect((await parser.parse('SYD to LHR, my manager authorised 4,500 AUD')).statedBudget).toBe('4500');
+    expect((await parser.parse('SYD to LHR, finance signed off on 2000')).statedBudget).toBe('2000');
+  });
+
+  it('still captures the plain limit forms', async () => {
+    expect((await parser.parse('Book me SYD to LHR, under $1,200')).statedBudget).toBe('1200');
+    expect((await parser.parse('Book me SYD to LHR, budget of 1500')).statedBudget).toBe('1500');
+  });
+
+  it('is absent when the traveller names no number', async () => {
+    expect((await parser.parse('Book me SYD to LHR, 15-25 Sept, economy')).statedBudget).toBeUndefined();
+  });
+});
+
 describe('route', () => {
   it('reads a plain "X to Y"', async () => {
     const i = await parser.parse('Book me SYD to LHR return, 15-25 Sept, economy');

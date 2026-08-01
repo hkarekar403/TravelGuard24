@@ -223,7 +223,14 @@ export function createMockIntentParser(opts: { year?: number } = {}): IntentPars
       if (!cabin) assumptions.push('cabin not stated — assumed economy');
 
       // The traveller's own number, kept separate from the policy cap on purpose.
-      const budget = instruction.match(/(?:under|below|max(?:imum)?|budget(?: of)?|less than)\s*\$?\s*([\d,]+(?:\.\d{2})?)/i);
+      //
+      // "approved" and "authorised" matter as much as "under": the interesting case is not
+      // a traveller setting themselves a limit, it is one asserting an AUTHORITY —
+      // "finance approved 10,000" — and the gate declining to honour it. That beat is only
+      // visible if the number is captured, so the claim and the cap can sit side by side.
+      const budget = instruction.match(
+        /(?:under|below|max(?:imum)?|budget(?: of)?|less than|approved|authoris?z?ed|signed off(?: on)?)\s*(?:for\s*)?\$?\s*([\d,]+(?:\.\d{2})?)/i,
+      );
       const statedBudget = budget?.[1]?.replace(/,/g, '');
 
       return {
