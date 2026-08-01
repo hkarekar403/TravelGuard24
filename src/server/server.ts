@@ -163,6 +163,24 @@ createServer((req, res) => {
     return;
   }
 
+  // Parses an instruction and returns what the agent understood — and does nothing else.
+  // No search, no vendor, no booking. It exists so the human confirms the agent's
+  // INTERPRETATION rather than their own typing, which is the only version of a confirm
+  // step that carries any information.
+  if (url.pathname === '/understand' && req.method === 'POST') {
+    let raw = '';
+    req.on('data', (c) => (raw += c));
+    req.on('end', () => {
+      void (async () => {
+        const { instruction } = (raw ? JSON.parse(raw) : {}) as { instruction?: string };
+        const intent = await intentParser.parse(instruction?.trim() || '');
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(intent));
+      })();
+    });
+    return;
+  }
+
   if (url.pathname === '/policy') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify(policy));

@@ -25,8 +25,6 @@
 
   /* ── B ── */
   .mid{display:flex;flex-direction:column;height:100%}
-  .prompt{display:flex;gap:8px}
-  input[type=text]{flex:1;background:var(--panel);border:1px solid var(--line);color:var(--ink);padding:11px 13px;border-radius:8px;font-size:13.5px}
   button{background:var(--hi);border:0;color:#04121f;font-weight:600;padding:11px 20px;border-radius:8px;cursor:pointer;font-size:13.5px}
   button.ghost{background:transparent;border:1px solid var(--line);color:var(--dim);font-weight:500;padding:4px 9px;font-size:11px;border-radius:5px}
   button.ghost.on{border-color:var(--warn);color:var(--warn)}
@@ -69,6 +67,31 @@
   .hero{font-size:12.5px}
   .hero b{font-family:var(--mono);font-size:14px}
 
+  /* ── entrance ──
+     The agent is instructed, not queried. A persistent input with a Send button is
+     search-engine grammar and made the whole screen read as a travel site, which is the
+     opposite of what this is: the flight is the thing being decided about, not the
+     product on offer. */
+  .idle{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center}
+  .idle .meta{max-width:330px;line-height:1.6}
+  .scrim{position:fixed;inset:0;background:rgba(3,6,10,.74);display:grid;place-items:center;z-index:10;animation:in .16s ease}
+  .sheet{width:min(560px,92vw);background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:17px 18px 15px;box-shadow:0 22px 60px rgba(0,0,0,.6)}
+  .who{font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin:0 0 5px}
+  .bub{border-radius:11px;padding:11px 13px;font-size:13.5px;margin-bottom:12px}
+  .bub.you{background:#0e1a27;border:1px solid #18293a}
+  .bub.agent{background:var(--panel2);border:1px solid var(--line)}
+  .bub textarea{width:100%;background:transparent;border:0;color:var(--ink);font:inherit;resize:none;outline:none;display:block}
+  .actions{display:flex;gap:8px;align-items:center;margin-top:4px}
+  .actions .sp{margin-left:auto}
+  .badge{margin-bottom:6px;padding:7px 11px;border-radius:7px;background:#1b1405;border:1px solid #3d2f08;font-size:11.5px;color:var(--warn)}
+
+  /* The decision, not the fare. What is being authorised is the hero; the flight is
+     the reason for it. Reversing these two is what made it look like a shopping result. */
+  .verdict{display:flex;align-items:baseline;gap:9px;margin-bottom:2px}
+  .verdict .tag{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ok)}
+  .verdict .tag.no{color:var(--warn)}
+  .lede{font-size:11.5px;color:var(--dim)}
+
   /* ── C ── */
   .entry{padding:8px 0;border-bottom:1px solid var(--line);font-family:var(--mono);font-size:11px;animation:in .25s ease}
   .entry .top{display:flex;justify-content:space-between;gap:8px;color:var(--ink)}
@@ -90,25 +113,14 @@
 
   <div class="col mid">
     <h2>Agent</h2>
-    <div class="sub">Searches, checks policy, and only then requests payment.</div>
-    <div class="prompt">
-      <input type="text" id="q" value="Book me SYD to LHR return, 15-25 Sept, economy" />
-      <button id="go">Send</button>
-    </div>
-    <div class="opts">
-      Try:
-      <button class="ghost ex" data-say="Book me SYD to LHR return, 15-25 Sept, economy">economy trip</button>
-      <button class="ghost ex" data-say="Book me business class SYD to LHR, 15-25 Sept - it's a long flight">business class</button>
-      <button class="ghost ex" data-say="Need to get to London from Sydney, 15-25 Sept, under $1,200">vague + budget</button>
-    </div>
-    <div class="opts" style="margin-top:-4px">
-      <span style="opacity:.55">demo control ·</span> tamper the credential:
-      <button class="ghost on" data-tamper="none">off</button>
-      <button class="ghost" data-tamper="amount">amount</button>
-      <button class="ghost" data-tamper="merchant">merchant</button>
-      <button class="ghost" data-tamper="replay">replay</button>
-    </div>
+    <div class="sub">Spends only within policy. Checks first, pays second, records both.</div>
+    <div id="badge"></div>
     <div class="flow" id="flow"></div>
+    <div class="idle" id="idle">
+      <button id="trigger">Instruct the agent</button>
+      <div class="meta">A traveller asks for a trip. The agent decides whether it may be
+        paid for, and only then asks anyone for money.</div>
+    </div>
   </div>
 
   <div class="col">
@@ -116,6 +128,32 @@
     <div class="sub">Every attempt, including refusals.</div>
     <div id="log"><div class="empty">No entries yet.</div></div>
     <div class="foot">SHA-256 chain · tamper-evident ordering</div>
+  </div>
+</div>
+
+<div class="scrim" id="scrim" hidden>
+  <div class="sheet">
+    <div class="who">Traveller</div>
+    <div class="bub you"><textarea id="q" rows="2">Book me SYD to LHR return, 15-25 Sept, economy</textarea></div>
+    <div class="who">Agent — what I understood</div>
+    <div class="bub agent" id="readback"><span class="meta">reading…</span></div>
+    <div class="opts">
+      <button class="ghost ex" data-say="Book me SYD to LHR return, 15-25 Sept, economy">economy trip</button>
+      <button class="ghost ex" data-say="Book me business class SYD to LHR, 15-25 Sept - it's a long flight">business class</button>
+      <button class="ghost ex" data-say="Need to get to London from Sydney, 15-25 Sept, under $1,200">vague + budget</button>
+    </div>
+    <div class="opts" style="margin-top:-6px">
+      <span style="opacity:.55">demo control ·</span> tamper the credential:
+      <button class="ghost on" data-tamper="none">off</button>
+      <button class="ghost" data-tamper="amount">amount</button>
+      <button class="ghost" data-tamper="merchant">merchant</button>
+      <button class="ghost" data-tamper="replay">replay</button>
+    </div>
+    <div class="actions">
+      <span class="meta sp"></span>
+      <button class="ghost" id="cancel">Cancel</button>
+      <button id="confirm">Confirm</button>
+    </div>
   </div>
 </div>
 
@@ -127,7 +165,9 @@ let ticker = null, refusals = 0, checkout = null;
 const money = (m,c) => (m/100).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,',') + ' ' + c;
 const esc = (s) => String(s).replace(/[<&]/g, (c) => (c==='<'?'&lt;':'&amp;'));
 
+let ORG = 'company', CAP = 'the cap';
 fetch('/policy').then(r=>r.json()).then(p=>{
+  ORG = p.org; CAP = money(p.budgetCapMinor, p.currency);
   $('#org').textContent = `${p.org} · ${p.version} · 4 rules active`;
   $('#rules').innerHTML = [
     ['Budget cap', money(p.budgetCapMinor,p.currency)+' per booking'],
@@ -137,14 +177,53 @@ fetch('/policy').then(r=>r.json()).then(p=>{
   ].map(([k,v])=>`<div class="rule"><div class="k">${k}</div><div class="v">${v}</div></div>`).join('');
 });
 
-document.querySelectorAll('[data-say]').forEach(b=>b.onclick=()=>{ $('#q').value=b.dataset.say; });
+document.querySelectorAll('[data-say]').forEach(b=>b.onclick=()=>{ $('#q').value=b.dataset.say; readBack(); });
 document.querySelectorAll('[data-tamper]').forEach(b=>b.onclick=()=>{tamper=b.dataset.tamper;
   document.querySelectorAll('[data-tamper]').forEach(x=>x.classList.toggle('on',x===b));});
 
-$('#go').onclick = () => {
+const MONTH=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const day = (iso) => { const [y,m,d]=iso.split('-'); return `${+d} ${MONTH[+m-1]}`; };
+
+/* The agent restates the instruction before acting on it. Confirming your own typing
+   carries no information; confirming an interpretation does — and it puts the
+   assumptions the agent had to make in front of the human BEFORE anything is spent,
+   which is the same obligation the audit log discharges afterwards. */
+let readSeq = 0;
+async function readBack(){
+  const my = ++readSeq;
+  const box = $('#readback');
+  const r = await fetch('/understand',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({instruction:$('#q').value})});
+  const i = await r.json();
+  if(my!==readSeq) return;             // a later keystroke already won
+  box.innerHTML =
+    `<div><b>${i.origin} → ${i.destination}</b> return · ${day(i.departureDate)} – ${day(i.returnDate)}
+       · ${i.cabinClass.replace('_',' ')}</div>
+     ${i.assumptions.length?`<div class="why">You didn't say: ${i.assumptions.join(' · ')}</div>`:''}
+     ${i.statedBudget?`<div class="why">You mentioned ${i.statedBudget} — noted, but ${ORG}'s cap is what decides.</div>`:''}
+     <div class="why">I'll check every offer against ${ORG}'s policy before requesting payment.</div>`;
+}
+
+let typing;
+$('#q').oninput = () => { clearTimeout(typing); typing=setTimeout(readBack, 350); };
+
+function openSheet(){ $('#scrim').hidden=false; readBack(); $('#q').focus(); }
+$('#trigger').onclick = openSheet;
+$('#cancel').onclick = () => { $('#scrim').hidden=true; };
+document.onkeydown = (ev) => { if(ev.key==='Escape' && !$('#scrim').hidden) $('#scrim').hidden=true; };
+
+$('#confirm').onclick = () => {
+  $('#scrim').hidden=true;
+  $('#idle').style.display='none';
   flow.innerHTML=''; log.innerHTML='<div class="empty">No entries yet.</div>';
-  entries=0; n=0; refusals=0; $('#go').disabled=true;
+  entries=0; n=0; refusals=0;
   clearInterval(ticker); ticker=null;
+  // A demo affordance that is only a button state is one a viewer can miss. While it is
+  // armed it stays declared on screen for the whole run — the rejection has to be
+  // visibly caused, or it proves nothing.
+  $('#badge').innerHTML = tamper==='none' ? '' :
+    `<div class="badge">demo control armed — presenting a tampered
+       ${tamper==='replay'?'credential (used twice)':tamper} to the merchant</div>`;
   fetch('/book',{method:'POST',headers:{'Content-Type':'application/json'},
     body:JSON.stringify({instruction:$('#q').value,tamper})});
 };
@@ -269,10 +348,12 @@ new EventSource('/events').onmessage = (m) => {
     if(d.outcome==='APPROVED'){
       const s=d.selected;
       verdict.innerHTML =
-        `<div class="carrier">${s.carrier.name} <span class="meta">(${s.carrier.iata})</span></div>
-         <div class="price" style="margin:2px 0 8px">${s.totalAmount} <span class="meta" style="font-size:13px">${s.currency}</span></div>
+        `<div class="verdict"><span class="tag">Approved to spend</span>
+           <span class="lede">1 of ${d.totalOffers} offers cleared all 4 rules</span></div>
+         <div class="price">${s.totalAmount} <span class="meta" style="font-size:13px">${s.currency}</span></div>
+         <div class="lede" style="margin:1px 0 9px">becomes the network-locked mandate amount — not the ${CAP} cap</div>
          <table class="checks">${ruleRows(s.rules)}</table>
-         ${d.runnerUp?`<div class="why">Chose ${s.carrier.name} at ${s.totalAmount} over ${d.runnerUp.carrier.name} at ${d.runnerUp.totalAmount} — cheapest compliant</div>`:''}`;
+         <div class="why">Against ${s.carrier.name} (${s.carrier.iata})${d.runnerUp?`, chosen over ${d.runnerUp.carrier.name} at ${d.runnerUp.totalAmount} — cheapest compliant`:''}</div>`;
       revealFunnel(document.getElementById('fn'), d.totalOffers, d.funnel, ()=>{
         verdict.style.opacity='1';
         const g=document.getElementById('s-gate'); if(!g) return;
@@ -283,8 +364,10 @@ new EventSource('/events').onmessage = (m) => {
     } else {
       const nm=d.nearestMiss, ch=d.cheapestOverall;
       verdict.innerHTML =
-        `<div class="carrier meta">Nearest miss — <span style="color:var(--ink)">${nm?.carrier.name??'—'}</span></div>
-         <div class="price" style="margin:2px 0 8px;color:var(--warn)">${nm?.totalAmount??'—'} <span class="meta" style="font-size:13px">${nm?.currency??''}</span></div>
+        `<div class="verdict"><span class="tag no">Refused to spend</span>
+           <span class="lede">0 of ${d.totalOffers} offers cleared all 4 rules</span></div>
+         <div class="lede">nearest miss — ${nm?.carrier.name??'—'}</div>
+         <div class="price" style="margin:1px 0 8px;color:var(--warn)">${nm?.totalAmount??'—'} <span class="meta" style="font-size:13px">${nm?.currency??''}</span></div>
          <table class="checks">${nm?ruleRows(nm.rules.filter(r=>!r.passed)):''}</table>
          <div class="why">${d.totalOffers} offers evaluated. None compliant.${ch&&ch.offerId!==nm?.offerId?`<br>Cheapest available ${ch.totalAmount} ${ch.currency} — ${ch.failedRules.length} rules short.`:''}</div>
          <div class="banner"><b>No payment session was created.</b> The agent did not fail to pay — it declined to.</div>`;
@@ -445,8 +528,14 @@ new EventSource('/events').onmessage = (m) => {
   };
 
   if(e.type==='finished'){
-    $('#go').disabled=false;
     clearInterval(ticker); ticker=null;
+    // The way back is a fresh instruction, not a re-enabled Send button.
+    const idle=$('#idle');
+    idle.style.display='flex';
+    idle.style.flex='0 0 auto';
+    idle.style.paddingTop='12px';
+    idle.querySelector('button').textContent='New instruction';
+    idle.querySelector('.meta')?.remove();
     // Restated once everything has landed. Reading the count while rendering the
     // confirmed block depends on the last audit entry having arrived first, which is
     // true of the orchestrator today and is not a thing this screen should rely on —
