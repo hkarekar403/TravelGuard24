@@ -36,7 +36,22 @@ export type Offer = {
   expires_at: string;
   owner: Carrier;
   slices: Slice[];
+  /**
+   * `requires_instant_payment: true` means the offer cannot become a `hold` order —
+   * roughly two thirds of a live result set. Such offers are unbookable in our flow and
+   * are filtered out at discovery, before the policy gate ever sees them.
+   */
+  payment_requirements?: {
+    requires_instant_payment?: boolean;
+    payment_required_by?: string | null;
+    price_guarantee_expires_at?: string | null;
+  };
 };
+
+/** An offer we can actually transact: it can be held now and paid after authorisation. */
+export function isHoldEligible(offer: Offer): boolean {
+  return offer.payment_requirements?.requires_instant_payment !== true;
+}
 
 // ---------------------------------------------------------------------------
 // Policy — data, not code. Loaded from JSON.
@@ -112,6 +127,12 @@ export type PolicyDecision = {
   evaluatedAt: string;
   totalOffers: number;
   funnel: FunnelStep[];
+  /**
+   * Every compliant offer, cheapest first. `selected` is the head and `runnerUp` the
+   * second — this is the full list so the orchestrator can fall back when an airline
+   * refuses to hold the chosen fare.
+   */
+  compliant: OfferEvaluation[];
   /** Cheapest compliant offer. Null when BLOCKED. */
   selected: OfferEvaluation | null;
   /** Second-cheapest compliant. Recorded in the audit entry — answers "why this flight?". */

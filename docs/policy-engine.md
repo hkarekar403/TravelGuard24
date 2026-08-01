@@ -44,6 +44,23 @@ Duffel returns amounts as **decimal strings** (`"1202.75"`), not numbers.
 function toMinorUnits(amount: string): number
 ```
 
+## Discovery filter — hold-eligibility, applied before the gate
+
+`POST /air/orders` with `type: "hold"` fails against an offer whose
+`payment_requirements.requires_instant_payment` is `true`. **Roughly two thirds of a live result
+set is in that category** (1,031 of 1,669 in the captured fixture; 1,022 of 1,513 in a live search
+on 1 Aug), so this is the common case, not an edge.
+
+Such offers are removed **in the Duffel client, at discovery**, before the policy engine sees them.
+They are a vendor-capability constraint, not a policy judgement — a fare we structurally cannot
+transact should never reach a rule, and should certainly never be *selected* only to fail at hold.
+
+Worth knowing because the failure is badly signposted: Duffel returns
+`422 invalid_order_create_type — "The specified type was incorrect"`, which points squarely at the
+request body and says nothing about the offer. It reads as a malformed request. Diagnosing it cost
+real time on 1 Aug, and the first hypothesis was disproved by a verification search that happened
+to return four hold-eligible offers.
+
 ## Currency
 
 All comparisons require `offer.total_currency === policy.currency`. A mismatch is **not** a
@@ -262,22 +279,27 @@ does not reproduce them exactly is wrong. Read fixtures with `encoding='utf-8-si
 Policy: cap `130000`, cabins `["economy"]`, `minAdvanceDays: 14`, allowlist
 `["ZZ","IB","BA","AA","SQ","LH","QR","EY","NH","JL","TG","AI"]`, `now = 2026-07-26`.
 
+Offers are pre-filtered to the **hold-eligible** ones (see "Discovery filter" below) before the
+funnel is computed.
+
 ### APPROVED — `logs/duffel/01-offer_requests-POST.full.json.zip` (1,669 offers)
 
 ```
-funnel:  1669 → cabin 1478 → vendor 1343 → advance 1343 → budget 4
+1669 offers → 638 bookable
+funnel:  638 → cabin 638 → vendor 503 → advance 503 → budget 4
 selected:  Duffel Airways (ZZ)     1202.75 AUD
 runnerUp:  Iberia (IB)             1231.32 AUD
 also compliant: British Airways 1231.46, American Airlines 1256.25
 ```
 
-The trimmed `01-offer_requests-POST.json` (32 offers, all 18 airlines) must produce the **same
-selected and runner-up**, with a different funnel. Test both.
+The trimmed `01-offer_requests-POST.json` (32 offers → 30 bookable, funnel 30 → 30 → 18 → 18 → 4)
+must produce the **same selected and runner-up**. Test both.
 
 ### BLOCKED — `logs/duffel/08-offer_requests-BLOCKED-business.json` (31 offers)
 
 ```
-funnel:  31 → cabin 0 → vendor 0 → advance 0 → budget 0
+31 offers → 29 bookable
+funnel:  29 → cabin 0 → vendor 0 → advance 0 → budget 0
 compliant: none
 nearestMiss:      Iberia 8213.56 AUD — fails [cabin_class, budget_cap], over by 6913.56
 cheapestOverall:  Asiana 7104.08 AUD — fails [cabin_class, vendor_allowlist, budget_cap]

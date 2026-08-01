@@ -90,6 +90,7 @@ function decisionApproved(amount = OFFER_PRICE): PolicyDecision {
     evaluatedAt: '2026-08-01T02:00:00.000Z',
     totalOffers: 1669,
     funnel: [],
+    compliant: [evaluation('off_1', amount, true), evaluation('off_2', '1231.32', true)],
     selected: evaluation('off_1', amount, true),
     runnerUp: evaluation('off_2', '1231.32', true),
     nearestMiss: null,
@@ -104,6 +105,7 @@ function decisionBlocked(): PolicyDecision {
     evaluatedAt: '2026-08-01T02:00:00.000Z',
     totalOffers: 462,
     funnel: [],
+    compliant: [],
     selected: null,
     runnerUp: null,
     nearestMiss: evaluation('off_9', '8213.56', false),
@@ -113,6 +115,7 @@ function decisionBlocked(): PolicyDecision {
 
 const credential: PaymentCredential = {
   txnRefId: 'tli_test',
+  productRefId: 'prd_test',
   merchantName: 'TravelGuard24',
   merchantUrl: 'https://travelguard24-demo.vercel.app',
   totalAmount: OFFER_PRICE,
@@ -149,6 +152,8 @@ type Overrides = {
   redemption?: RedemptionResult;
   reportConfirmed?: boolean;
   settlementError?: string;
+  /** Number of leading hold attempts that fail, simulating airlines that refuse holds. */
+  holdRejects?: number;
 };
 
 function harness(o: Overrides = {}) {
@@ -180,6 +185,9 @@ function harness(o: Overrides = {}) {
     },
     async createHoldOrder(): Promise<HoldOrder> {
       calls.createHoldOrder++;
+      if (calls.createHoldOrder <= (o.holdRejects ?? 0)) {
+        throw new Error('Duffel 422: invalid_order_create_type');
+      }
       return {
         id: 'ord_test',
         bookingReference: 'B6LDNQ',
@@ -224,7 +232,7 @@ function harness(o: Overrides = {}) {
         credential: isLast && status === 'awaiting_result' ? credential : null,
       };
     },
-    async reportStatus(_s, _t, status): Promise<ReportOutcome> {
+    async reportStatus(_s, _c, status): Promise<ReportOutcome> {
       calls.reportStatus.push(status);
       const confirmed = o.reportConfirmed ?? true;
       return { confirmed, visaConfirmation: confirmed ? 'SUCCESS' : 'FAILED' };
@@ -509,5 +517,39 @@ describe('audit trail', () => {
 
     const paid = calls.audit.find((a) => a.type === 'PAYMENT_APPROVED');
     expect((paid?.payload as { externalProductId?: string }).externalProductId).toBe('B6LDNQ');
+  });
+});
+
+describe('airlines that refuse hold orders', () => {
+  it('falls back to the next compliant offer instead of failing the booking', async () => {
+    const { calls, deps, request } = harness({ holdRejects: 1 });
+
+    const outcome = await bookTrip(request, deps);
+
+    expect(outcome.status).toBe('CONFIRMED');
+    expect(calls.createHoldOrder).toBe(2);
+    // Fallback must not weaken the decision — every candidate already passed policy.
+    expect(calls.createSession).toHaveLength(1);
+  });
+
+  it('records the carriers that refused, so "why not the cheapest?" is answerable', async () => {
+    const { calls, deps, request } = harness({ holdRejects: 1 });
+
+    await bookTrip(request, deps);
+
+    const hold = calls.audit.find((a) => a.type === 'HOLD_CREATED');
+    const rejected = (hold?.payload as { rejectedByAirline?: Array<{ carrier: string }> }).rejectedByAirline;
+    expect(rejected).toHaveLength(1);
+    expect(rejected?.[0]?.carrier).toBe('Duffel Airways');
+  });
+
+  it('stops without touching Prava when no compliant offer can be held', async () => {
+    const { calls, deps, request } = harness({ holdRejects: 99 });
+
+    const outcome = await bookTrip(request, deps);
+
+    expect(outcome.status).toBe('NO_BOOKABLE_OFFER');
+    expect(calls.createSession).toHaveLength(0);
+    expect(calls.payFromBalance).toHaveLength(0);
   });
 });

@@ -25,7 +25,7 @@
  * evidence, not a non-event.
  */
 
-import type { Evaluate, Policy, PolicyDecision } from '../policy/types.js';
+import type { Evaluate, OfferEvaluation, Policy, PolicyDecision } from '../policy/types.js';
 import type {
   AuditPort,
   Clock,
@@ -60,6 +60,7 @@ export type Dependencies = {
 export type BookingOutcome =
   | { status: 'BLOCKED_BY_POLICY'; decision: PolicyDecision }
   | { status: 'PRICE_DRIFTED'; quoted: string; ordered: string; pnr: string }
+  | { status: 'NO_BOOKABLE_OFFER'; attempts: Array<{ offerId: string; carrier: string; error: string }> }
   | { status: 'AUTHORISATION_TIMED_OUT'; pnr: string; sessionId: string }
   | { status: 'AUTHORISATION_FAILED'; pnr: string; sessionId: string; pravaStatus: string }
   | { status: 'REDEMPTION_REJECTED'; pnr: string; sessionId: string; redemption: RedemptionResult }
@@ -125,37 +126,75 @@ export async function bookTrip(req: BookingRequest, deps: Dependencies): Promise
     },
   });
 
-  // -- 3. Re-price -----------------------------------------------------------
-  // Offers expire ~30 minutes after creation. Re-quote immediately before committing
-  // so the mandate is locked to a price that is still live (decision 1).
-  const refreshed = await duffel.refreshOffer(selected.offerId);
+  // -- 3/4. Re-price and hold, falling back down the compliant list ----------
+  //
+  // Not every airline supports hold orders, and NOTHING in the offer advertises which
+  // do: `requires_instant_payment` can be false and the hold still fails with
+  // `422 invalid_order_create_type`. Since "cheapest compliant" lands on a different
+  // carrier on every search, a single attempt makes the whole flow a coin flip.
+  //
+  // So we walk the compliant offers in policy order. Every candidate is one the policy
+  // already approved, so falling back never weakens the decision — it only costs money,
+  // and it costs the least possible extra.
+  const candidates = decision.compliant.length > 0 ? decision.compliant : [selected];
+  let held: { order: Awaited<ReturnType<DuffelPort['createHoldOrder']>>; offer: OfferEvaluation } | null = null;
+  const holdAttempts: Array<{ offerId: string; carrier: string; error: string }> = [];
 
-  // -- 4. Hold ---------------------------------------------------------------
-  // The PNR is assigned HERE, at zero payment. Payment later produces the e-ticket
-  // document, not the booking reference — do not let the UI imply otherwise.
-  const order = await duffel.createHoldOrder(refreshed.id, req.passenger, {
-    internal_booking_ref: `TG24-${decision.policyVersion}`,
-    policy_decision_id: decision.evaluatedAt,
-  });
+  for (const candidate of candidates) {
+    // Offers expire ~30 minutes after creation. Re-quote immediately before committing
+    // so the mandate is locked to a price that is still live (decision 1).
+    const refreshed = await duffel.refreshOffer(candidate.offerId);
+
+    let order: Awaited<ReturnType<DuffelPort['createHoldOrder']>>;
+    try {
+      // The PNR is assigned HERE, at zero payment. Payment later produces the e-ticket
+      // document, not the booking reference — do not let the UI imply otherwise.
+      order = await duffel.createHoldOrder(refreshed.id, req.passenger, {
+        internal_booking_ref: `TG24-${decision.policyVersion}`,
+        policy_decision_id: decision.evaluatedAt,
+      });
+    } catch (err) {
+      holdAttempts.push({
+        offerId: candidate.offerId,
+        carrier: candidate.carrier.name,
+        error: err instanceof Error ? err.message : String(err),
+      });
+      continue;
+    }
+
+    // I2. The order total is what we are actually liable for. If it has moved away from
+    // the quote the policy approved, the approved decision no longer describes this
+    // purchase — stop rather than mint a mandate for a number nobody approved. This is
+    // NOT a fallback case: a moving price is a reason to stop, not to shop.
+    if (order.totalAmount !== refreshed.total_amount) {
+      return {
+        status: 'PRICE_DRIFTED',
+        quoted: refreshed.total_amount,
+        ordered: order.totalAmount,
+        pnr: order.bookingReference,
+      };
+    }
+
+    held = { order, offer: candidate };
+    break;
+  }
+
+  if (held === null) {
+    return { status: 'NO_BOOKABLE_OFFER', attempts: holdAttempts };
+  }
+
+  const order = held.order;
 
   audit.append('HOLD_CREATED', {
     pnr: order.bookingReference,
     orderId: order.id,
     amount: order.totalAmount,
+    carrier: held.offer.carrier,
     paymentRequiredBy: order.paymentRequiredBy,
+    // Recording the skipped carriers keeps "why not the cheapest?" answerable, which is
+    // the same obligation the runner-up entry discharges for the policy decision.
+    ...(holdAttempts.length > 0 ? { rejectedByAirline: holdAttempts } : {}),
   });
-
-  // I2. The order total is what we are actually liable for. If it has moved away from
-  // the quote the policy approved, the approved decision no longer describes this
-  // purchase — stop rather than mint a mandate for a number nobody approved.
-  if (order.totalAmount !== refreshed.total_amount) {
-    return {
-      status: 'PRICE_DRIFTED',
-      quoted: refreshed.total_amount,
-      ordered: order.totalAmount,
-      pnr: order.bookingReference,
-    };
-  }
 
   // -- 5. Mandate ------------------------------------------------------------
   // I2 again, stated positively: the amount sent is the order total, verbatim as a
@@ -210,7 +249,7 @@ export async function bookTrip(req: BookingRequest, deps: Dependencies): Promise
   if (!redemption.accepted) {
     // I3. Report the truth to the network, then stop. Reporting DECLINED closes the
     // mandate rather than leaving live credentials outstanding.
-    await prava.reportStatus(session.sessionId, credential.txnRefId, 'DECLINED');
+    await prava.reportStatus(session.sessionId, credential, 'DECLINED');
     audit.append('REDEMPTION_REJECTED', {
       sessionId: session.sessionId,
       pnr: order.bookingReference,
@@ -221,7 +260,7 @@ export async function bookTrip(req: BookingRequest, deps: Dependencies): Promise
   }
 
   // -- 8. Confirm to the network ---------------------------------------------
-  const report = await prava.reportStatus(session.sessionId, credential.txnRefId, 'APPROVED');
+  const report = await prava.reportStatus(session.sessionId, credential, 'APPROVED');
 
   if (!report.confirmed) {
     return {

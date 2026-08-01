@@ -25,7 +25,7 @@ type RawLineItem = {
   dynamic_cvv?: unknown;
   expiry_month?: unknown;
   expiry_year?: unknown;
-  products?: Array<{ external_product_id?: unknown }>;
+  products?: Array<{ external_product_id?: unknown; product_ref_id?: unknown }>;
 };
 
 type RawEnvelope = {
@@ -57,6 +57,7 @@ export function parseCredential(raw: unknown): PaymentCredential | null {
 
   return {
     txnRefId,
+    productRefId: str(lineItem.products?.[0]?.product_ref_id) ?? '',
     merchantName: str(lineItem.merchant_name) ?? '',
     merchantUrl: str(lineItem.merchant_url) ?? '',
     totalAmount: str(lineItem.total_amount) ?? '',

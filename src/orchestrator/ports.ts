@@ -91,6 +91,8 @@ export type PravaSession = {
  */
 export type PaymentCredential = {
   txnRefId: string;
+  /** Required by report-status alongside txn_ref_id. Lives on products[], not the line item. */
+  productRefId: string;
   merchantName: string;
   merchantUrl: string;
   totalAmount: string;
@@ -117,7 +119,8 @@ export type ReportOutcome = {
 export interface PravaPort {
   createSession(req: CreateSessionRequest): Promise<PravaSession>;
   getPaymentResult(sessionId: string): Promise<PaymentResult>;
-  reportStatus(sessionId: string, txnRefId: string, status: 'APPROVED' | 'DECLINED'): Promise<ReportOutcome>;
+  /** Takes the whole credential: the call needs both txn_ref_id and product_ref_id. */
+  reportStatus(sessionId: string, credential: PaymentCredential, status: 'APPROVED' | 'DECLINED'): Promise<ReportOutcome>;
 }
 
 // ---------------------------------------------------------------------------
