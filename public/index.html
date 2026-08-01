@@ -349,9 +349,21 @@ new EventSource('/events').onmessage = (m) => {
        <button id="openck" style="margin-top:10px">Open Visa checkout</button>`;
     const pk = document.getElementById('pk');
     const open = () => {
-      const w = 520, h = 780;
+      // `width`/`height` size the VIEWPORT. Chrome then adds its title bar and address
+      // bar on top — and `screen.height` counts the taskbar, which no window can use.
+      // Sizing against those two overshot by ~140px and ran the window to the bottom of
+      // the display, which reads as a second browser rather than as a payment modal.
+      const CHROME_UI = 90;
+      const availW = screen.availWidth || screen.width;
+      const availH = screen.availHeight || screen.height;
+      const w = 480;
+      const h = Math.min(700, availH - CHROME_UI - 120);   // 120 = breathing room top and bottom
+      const left = Math.round((screen.availLeft || 0) + (availW - w) / 2);
+      const top  = Math.round((screen.availTop  || 0) + (availH - h - CHROME_UI) / 2);
+      // No `location=no`: the address bar must stay visible. `sandbox.auth.visa.com` on
+      // screen is third-party evidence for pillar 2 and costs nothing to keep.
       checkout = window.open(e.iframeUrl, 'prava-checkout',
-        `width=${w},height=${h},left=${Math.round((screen.width-w)/2)},top=${Math.round((screen.height-h)/2)}`);
+        `width=${w},height=${h},left=${left},top=${top}`);
       pk.className = checkout ? 'banner blue' : 'banner';
       pk.innerHTML = checkout
         ? '<b>Waiting for passkey…</b> Visa-hosted checkout open in a separate window.'
