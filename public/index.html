@@ -345,17 +345,23 @@ new EventSource('/events').onmessage = (m) => {
     body('auth').innerHTML =
       `<div class="price">${e.amount} <span class="meta" style="font-size:13px">${e.currency}</span></div>
        <div class="tick">TravelGuard24 · one-time · locked to this merchant and this exact amount</div>
-       <div class="banner blue" id="pk"><b>Waiting for passkey…</b> Visa-hosted prompt open.
-         <button class="ghost" id="reopen" style="margin-left:6px">open checkout</button></div>`;
+       <div class="banner blue" id="pk"></div>
+       <button id="openck" style="margin-top:10px">Open Visa checkout</button>`;
+    const pk = document.getElementById('pk');
     const open = () => {
       const w = 520, h = 780;
       checkout = window.open(e.iframeUrl, 'prava-checkout',
         `width=${w},height=${h},left=${Math.round((screen.width-w)/2)},top=${Math.round((screen.height-h)/2)}`);
-      if(!checkout) document.getElementById('pk').innerHTML =
-        `<b>Popup blocked.</b> Click to open the Visa-hosted checkout.
-         <button class="ghost" id="reopen" style="margin-left:6px">open checkout</button>`;
-      document.getElementById('reopen').onclick = open;
+      pk.className = checkout ? 'banner blue' : 'banner';
+      pk.innerHTML = checkout
+        ? '<b>Waiting for passkey…</b> Visa-hosted checkout open in a separate window.'
+        : '<b>Popup blocked.</b> Chrome will not open a payment window without a click — use the button below.';
     };
+    // The button is always rendered, not only on failure. It is the recovery path when
+    // the browser blocks the automatic attempt, and the way back in if the window gets
+    // closed mid-tap. A blocked popup surfaced as a small ghost link is easy to miss,
+    // and missing it on camera stalls the demo at its one human step.
+    document.getElementById('openck').onclick = open;
     open();
   }
 
