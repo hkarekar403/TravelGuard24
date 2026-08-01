@@ -21,7 +21,16 @@ import { bookTrip } from '../orchestrator/orchestrator.js';
 import { evaluate } from '../policy/engine.js';
 import type { Policy } from '../policy/types.js';
 import type { Clock } from '../orchestrator/ports.js';
-import { instrumentAudit, instrumentDuffel, instrumentMerchant, instrumentPrava, type UiEvent } from './events.js';
+import {
+  applyTamper,
+  instrumentAudit,
+  instrumentDuffel,
+  instrumentEvaluate,
+  instrumentMerchant,
+  instrumentPrava,
+  type TamperMode,
+  type UiEvent,
+} from './events.js';
 
 const PORT = 3000;
 const ROOT = new URL('../../', import.meta.url);
@@ -42,7 +51,7 @@ function broadcast(event: UiEvent): void {
 type BookBody = {
   cabinClass?: string;
   /** Demo affordance: deliberately corrupt the redemption so the guardrail visibly bites. */
-  tamper?: 'none' | 'amount' | 'merchant' | 'replay';
+  tamper?: TamperMode;
 };
 
 async function runBooking(body: BookBody): Promise<void> {
@@ -78,7 +87,10 @@ async function runBooking(body: BookBody): Promise<void> {
       emit,
     );
 
-    const merchant = instrumentMerchant(createSimulatedMerchant({ merchantName: 'TravelGuard24' }), emit);
+    const merchant = instrumentMerchant(
+      applyTamper(createSimulatedMerchant({ merchantName: 'TravelGuard24' }), body.tamper ?? 'none'),
+      emit,
+    );
     const audit = instrumentAudit(createHashChainAudit(clock), emit);
 
     const outcome = await bookTrip(
@@ -104,12 +116,12 @@ async function runBooking(body: BookBody): Promise<void> {
         userEmail: 'traveler@travelguard24-demo.vercel.app',
         cardId: '',
       },
-      { duffel, prava, merchant, audit, clock, evaluate },
+      { duffel, prava, merchant, audit, clock, evaluate: instrumentEvaluate(evaluate, emit) },
     );
 
-    if (outcome.status === 'BLOCKED_BY_POLICY') broadcast({ type: 'decided', decision: outcome.decision });
+    // `decided` already fired from the instrumented gate, at the moment the decision was
+    // actually made — do not re-broadcast it here or it lands after the payment.
     if (outcome.status === 'CONFIRMED') {
-      broadcast({ type: 'decided', decision: outcome.decision });
       broadcast({ type: 'ticketed', pnr: outcome.pnr, eTicketNumber: outcome.eTicketNumber });
     }
     broadcast({ type: 'finished', status: outcome.status, detail: outcome });
