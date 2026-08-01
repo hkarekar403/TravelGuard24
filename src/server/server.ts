@@ -174,7 +174,7 @@ async function runBooking(request: InboundRequest, tamper: TamperMode): Promise<
         policy,
         userId: 'test_user_002',
         userEmail: 'traveler@travelguard24-demo.vercel.app',
-        cardId: '',
+        cardId: config.pravaCardId,
       },
       { duffel, prava, merchant, audit, clock, evaluate: instrumentEvaluate(evaluate, emit) },
     );
