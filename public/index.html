@@ -74,6 +74,12 @@
      product on offer. */
   .idle{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center}
   .idle .meta{max-width:330px;line-height:1.6}
+  .watching{display:flex;align-items:center;gap:9px;font-size:15px}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--ok);animation:pulse 1.8s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:.25}50%{opacity:1}}
+  .from{display:flex;align-items:baseline;gap:8px;margin-bottom:5px}
+  .from .ch{font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--hi)}
+  .from .meta{font-size:11px}
   .scrim{position:fixed;inset:0;background:rgba(3,6,10,.74);display:grid;place-items:center;z-index:10;animation:in .16s ease}
   /* `display:grid` above outranks the UA rule for [hidden], so the attribute alone does
      not hide it — the sheet stayed over a running booking. */
@@ -120,9 +126,10 @@
     <div id="badge"></div>
     <div class="flow" id="flow"></div>
     <div class="idle" id="idle">
-      <button id="trigger">Instruct the agent</button>
-      <div class="meta">A traveller asks for a trip. The agent decides whether it may be
+      <div class="watching"><span class="dot"></span><span id="watch">connecting…</span></div>
+      <div class="meta">A traveller messages the agent. It decides whether the trip may be
         paid for, and only then asks anyone for money.</div>
+      <button class="ghost" id="trigger">Simulate an inbound message</button>
     </div>
   </div>
 
@@ -136,7 +143,7 @@
 
 <div class="scrim" id="scrim" hidden>
   <div class="sheet">
-    <div class="who">Traveller</div>
+    <div class="from"><span class="ch" id="sheetch">demo</span><span class="meta" id="sheetfrom"></span></div>
     <div class="bub you"><textarea id="q" rows="2">Book me SYD to LHR return, 15-25 Sept, economy</textarea></div>
     <div class="who">Agent — what I understood</div>
     <div class="bub agent" id="readback"><span class="meta">reading…</span></div>
@@ -210,12 +217,41 @@ async function readBack(){
 let typing;
 $('#q').oninput = () => { clearTimeout(typing); typing=setTimeout(readBack, 350); };
 
-function openSheet(){ $('#scrim').hidden=false; readBack(); $('#q').focus(); }
-$('#trigger').onclick = openSheet;
-$('#cancel').onclick = () => { $('#scrim').hidden=true; };
-document.onkeydown = (ev) => { if(ev.key==='Escape' && !$('#scrim').hidden) $('#scrim').hidden=true; };
+const CH_LABEL = {demo:'demo', imessage:'iMessage', email:'email'};
+let pendingId = null;
+
+fetch('/channel').then(r=>r.json()).then(c=>{
+  $('#watch').textContent = c.kind==='demo'
+    ? 'Watching for requests' : `Watching ${CH_LABEL[c.kind]||c.kind} · ${c.address}`;
+});
+
+/* The sheet is opened BY AN ARRIVING MESSAGE, not by a button. The traveller's words are
+   shown exactly as they were sent — read-only when they came from a real channel, since
+   editing someone else's message and then acting on it would misrepresent what was asked. */
+function openSheet(request){
+  pendingId = request.id;
+  const inbound = request.channel !== 'demo';
+  $('#sheetch').textContent = CH_LABEL[request.channel] || request.channel;
+  $('#sheetfrom').textContent =
+    `from ${request.from} · ${new Date(request.receivedAt).toLocaleTimeString('en-GB')}`;
+  $('#q').value = request.text;
+  $('#q').readOnly = inbound;
+  $('#scrim').hidden = false;
+  readBack();
+  if(!inbound) $('#q').focus();
+}
+
+// Asks the server to inject a message into the demo channel. It cannot fabricate an
+// inbound iMessage — so anything on screen during a real run really did arrive.
+$('#trigger').onclick = () => {
+  fetch('/simulate',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({text:$('#q').value})});
+};
+$('#cancel').onclick = () => { $('#scrim').hidden=true; pendingId=null; };
+document.onkeydown = (ev) => { if(ev.key==='Escape' && !$('#scrim').hidden) $('#cancel').onclick(); };
 
 $('#confirm').onclick = () => {
+  if(!pendingId) return;
   $('#scrim').hidden=true;
   $('#idle').style.display='none';
   flow.innerHTML=''; log.innerHTML='<div class="empty">No entries yet.</div>';
@@ -228,7 +264,8 @@ $('#confirm').onclick = () => {
     `<div class="badge">demo control armed — presenting a tampered
        ${tamper==='replay'?'credential (used twice)':tamper} to the merchant</div>`;
   fetch('/book',{method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({instruction:$('#q').value,tamper})});
+    body:JSON.stringify({requestId:pendingId,tamper})});
+  pendingId=null;
 };
 
 /* Steps accumulate. Finished ones collapse to a one-line summary so the whole
@@ -297,8 +334,12 @@ function addAudit(e){
 new EventSource('/events').onmessage = (m) => {
   const e = JSON.parse(m.data);
 
+  // A request arrived on the watched channel. Nothing has been decided yet — the human
+  // sees what was asked and what the agent understood, and confirms before anything runs.
+  if(e.type==='arrived') openSheet(e.request);
+
   if(e.type==='instructed'){
-    body('ask').innerHTML = `<div class="said">“${e.text}”</div>`;
+    body('ask').innerHTML = `<div class="said">“${esc(e.text)}”</div>`;
     close('ask', undefined);
   }
 
@@ -520,6 +561,19 @@ new EventSource('/events').onmessage = (m) => {
        </table>`;
     close('done', undefined);
     document.querySelector('#s-done .hd .n').textContent='✓';
+  }
+
+  /* The loop closing. This is the same claim the audit log makes, addressed to the person
+     who asked rather than to an auditor — and on a refusal it is the whole product: the
+     traveller is told which rule stopped it and that nothing was charged. */
+  if(e.type==='replied'){
+    TITLES.told = 'Replied to traveller';
+    body('told').innerHTML =
+      `<div class="meta" style="margin-bottom:6px">${CH_LABEL[e.channel]||e.channel} → ${esc(e.to)}${
+         e.delivered?'':' <span class="fail">— not delivered</span>'}</div>
+       <div class="bub agent" style="white-space:pre-wrap;margin:0">${esc(e.text)}</div>
+       ${e.error?`<div class="why fail">${esc(e.error).slice(0,120)}</div>`:''}`;
+    close('told', undefined, e.delivered?'done':'stop');
   }
 
   if(e.type==='audit') addAudit(e);

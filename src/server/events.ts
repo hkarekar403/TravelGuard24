@@ -8,6 +8,7 @@
 
 import type { Evaluate, PolicyDecision } from '../policy/types.js';
 import type { TripIntent } from '../agent/intent.js';
+import type { ChannelKind, InboundRequest } from '../channel/types.js';
 import type {
   AuditEventType,
   DuffelPort,
@@ -19,6 +20,15 @@ import type {
 } from '../orchestrator/ports.js';
 
 export type UiEvent =
+  | { type: 'arrived'; request: InboundRequest }
+  | {
+      type: 'replied';
+      channel: ChannelKind;
+      to: string;
+      text: string;
+      delivered: boolean;
+      error?: string;
+    }
   | { type: 'instructed'; text: string }
   | { type: 'understood'; intent: TripIntent }
   | { type: 'searching'; query: SearchRequest }

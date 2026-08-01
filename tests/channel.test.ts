@@ -14,8 +14,17 @@ const offer = (over: Partial<OfferEvaluation> = {}): OfferEvaluation => ({
   carrier: { iata: 'BA', name: 'British Airways' },
   compliant: false,
   failedRules: ['cabin_class', 'budget_cap'],
+  // `detail` strings mirror src/policy/engine.ts exactly. An earlier fixture omitted the
+  // cabin_class detail, which hid a real fault: with the engine's actual string the
+  // message said "policy allows economy only" and never said business was asked for.
   rules: [
-    { rule: 'cabin_class', passed: false, observed: 'business', expected: 'economy only' },
+    {
+      rule: 'cabin_class',
+      passed: false,
+      observed: 'business',
+      expected: 'economy only',
+      detail: 'policy allows economy only',
+    },
     { rule: 'vendor_allowlist', passed: true, observed: 'BA', expected: 'on list' },
     { rule: 'advance_purchase', passed: true, observed: '45 days', expected: '>= 14 days' },
     {
@@ -46,8 +55,12 @@ describe('composeReply', () => {
   it('names every failed rule and the overage when blocked', () => {
     const text = composeReply({ status: 'BLOCKED_BY_POLICY', decision: blocked() }, { org: 'Acme Corp' });
 
-    expect(text).toContain('cabin class — business');
+    // What was asked for, then the rule it broke. The requirement alone doesn't tell the
+    // traveller what they did.
+    expect(text).toContain('cabin class — business, policy allows economy only');
+    // ...but the fare total is on the line above, so the budget rule must not restate it.
     expect(text).toContain('budget cap — over by 5,804.08 AUD');
+    expect(text).not.toContain('budget cap — 7,104.08 AUD');
     // Whose rules these are, not which revision of them.
     expect(text).toContain("Acme Corp's travel policy");
     expect(text).not.toContain('v1 travel policy');

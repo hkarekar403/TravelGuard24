@@ -12,7 +12,11 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { spawn } from 'node:child_process';
 
-import { loadConfig } from '../config.js';
+import { loadConfig, loadEnvFile } from '../config.js';
+import { createDemoChannel } from '../channel/demo.js';
+import { createLinqChannel } from '../channel/linq.js';
+import { composeReply } from '../channel/outcome.js';
+import type { InboundChannel, InboundRequest } from '../channel/types.js';
 import { createDuffelClient } from '../duffel/client.js';
 import { createPravaClient } from '../prava/client.js';
 import { createSimulatedMerchant } from '../merchant/simulated-merchant.js';
@@ -54,24 +58,43 @@ function broadcast(event: UiEvent): void {
 
 const intentParser = createMockIntentParser();
 
-type BookBody = {
-  /** Plain-English instruction. The agent parses it; cabin is not chosen by a control. */
-  instruction?: string;
-  /** Demo affordance: deliberately corrupt the redemption so the guardrail visibly bites. */
-  tamper?: TamperMode;
-};
+// ---------------------------------------------------------------------------
+// Where requests come from.
+//
+// Default is the demo channel, deliberately — the recording has to be reproducible, and
+// Linq has no sandbox, so every rehearsal on iMessage is a real message to a real phone.
+// `CHANNEL=imessage` switches to the real thing.
+// ---------------------------------------------------------------------------
+const env = loadEnvFile();
+const demoChannel = createDemoChannel();
+const wantsIMessage = (process.env['CHANNEL'] ?? env['CHANNEL'] ?? 'demo') === 'imessage';
+const linqKey = process.env['LINQ_API_KEY'] ?? env['LINQ_API_KEY'] ?? '';
 
-async function runBooking(body: BookBody): Promise<void> {
+const channel: InboundChannel =
+  wantsIMessage && linqKey ? createLinqChannel({ apiKey: linqKey }) : demoChannel;
+
+const POLL_MS = 1_500;
+
+/**
+ * Arrived, shown to the human, not yet confirmed.
+ *
+ * A booking is only ever started from one of these, so what runs always traces back to a
+ * message that genuinely arrived — the UI cannot invent an instruction and post it.
+ */
+const awaiting = new Map<string, InboundRequest>();
+
+async function runBooking(request: InboundRequest, tamper: TamperMode): Promise<void> {
   if (running) return;
   running = true;
   try {
     const config = loadConfig();
     const emit = broadcast;
 
-    // The instruction is the only input. Everything downstream — including which cabin
-    // gets searched, and therefore whether the policy gate blocks — comes from what the
-    // traveller actually said.
-    const instruction = body.instruction?.trim() || 'Book me SYD to LHR return, 15-25 Sept';
+    // The message is the only input. Everything downstream — including which cabin gets
+    // searched, and therefore whether the policy gate blocks — comes from what the
+    // traveller actually said. Nothing in it can alter the policy it is judged by: the
+    // parse yields a TripIntent and the rules come from policy.json, server-side.
+    const instruction = request.text;
     emit({ type: 'instructed', text: instruction });
     const intent = await intentParser.parse(instruction);
     emit({ type: 'understood', intent });
@@ -110,7 +133,7 @@ async function runBooking(body: BookBody): Promise<void> {
     );
 
     const merchant = instrumentMerchant(
-      applyTamper(createSimulatedMerchant({ merchantName: 'TravelGuard24' }), body.tamper ?? 'none'),
+      applyTamper(createSimulatedMerchant({ merchantName: 'TravelGuard24' }), tamper),
       emit,
     );
     const audit = instrumentAudit(createHashChainAudit(clock), emit);
@@ -146,11 +169,64 @@ async function runBooking(body: BookBody): Promise<void> {
     if (outcome.status === 'CONFIRMED') {
       broadcast({ type: 'ticketed', pnr: outcome.pnr, eTicketNumber: outcome.eTicketNumber });
     }
+
+    // Close the loop in the traveller's own thread. Every terminating outcome gets a
+    // reply, including the refusals — silence after "book me a flight" leaves someone
+    // not knowing whether they have a seat or whether they have been charged.
+    await notify(request, composeReply(outcome, { org: policy.org }));
+
     broadcast({ type: 'finished', status: outcome.status, detail: outcome });
   } catch (err) {
     broadcast({ type: 'finished', status: 'ERROR', detail: err instanceof Error ? err.message : String(err) });
   } finally {
     running = false;
+  }
+}
+
+/**
+ * Sends the outcome back, and shows on screen what was sent.
+ *
+ * A failure to notify must never fail the booking — the money has already moved, or
+ * deliberately not moved, and neither is undone by a message not sending.
+ */
+async function notify(request: InboundRequest, text: string): Promise<void> {
+  try {
+    await channel.reply(request.threadId, text);
+    broadcast({ type: 'replied', channel: channel.kind, to: request.from, text, delivered: true });
+  } catch (err) {
+    broadcast({
+      type: 'replied',
+      channel: channel.kind,
+      to: request.from,
+      text,
+      delivered: false,
+      error: err instanceof Error ? err.message : String(err),
+    });
+  }
+}
+
+/**
+ * Watches the channel.
+ *
+ * Polled, so nothing connects inward and this still runs on localhost with no tunnel.
+ * A poll failure is logged and retried rather than thrown — a transient vendor error
+ * must not silently stop the agent watching.
+ */
+async function watch(): Promise<void> {
+  for (;;) {
+    try {
+      for (const request of await channel.poll()) {
+        // One at a time. A second request arriving mid-booking is dropped rather than
+        // queued: it would otherwise surface minutes later against a screen showing
+        // someone else's booking.
+        if (running) continue;
+        awaiting.set(request.id, request);
+        broadcast({ type: 'arrived', request });
+      }
+    } catch (err) {
+      console.error('channel poll failed:', err instanceof Error ? err.message : err);
+    }
+    await new Promise((r) => setTimeout(r, POLL_MS));
   }
 }
 
@@ -199,12 +275,43 @@ createServer((req, res) => {
     return;
   }
 
+  // Who the agent is watching. The screen says so, because an agent that watches a
+  // channel is a different product from a form that waits to be filled in.
+  if (url.pathname === '/channel') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ kind: channel.kind, address: channel.address }));
+    return;
+  }
+
+  // Rehearsal affordance: injects a message as though a traveller had sent it. Only
+  // reaches the demo channel — it cannot fabricate an inbound iMessage, so what is on
+  // screen during a real run always corresponds to a message that genuinely arrived.
+  if (url.pathname === '/simulate' && req.method === 'POST') {
+    let raw = '';
+    req.on('data', (c) => (raw += c));
+    req.on('end', () => {
+      const { text } = (raw ? JSON.parse(raw) : {}) as { text?: string };
+      demoChannel.inject(text?.trim() || 'Book me SYD to LHR return, 15-25 Sept, economy');
+      res.writeHead(202, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ injected: true }));
+    });
+    return;
+  }
+
   if (url.pathname === '/book' && req.method === 'POST') {
     let raw = '';
     req.on('data', (c) => (raw += c));
     req.on('end', () => {
-      const body = (raw ? JSON.parse(raw) : {}) as BookBody;
-      void runBooking(body);
+      const body = (raw ? JSON.parse(raw) : {}) as { requestId?: string; tamper?: TamperMode };
+      const request = body.requestId ? awaiting.get(body.requestId) : undefined;
+      if (!request) {
+        // A booking must trace back to a message somebody actually sent.
+        res.writeHead(409, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'no such pending request' }));
+        return;
+      }
+      awaiting.delete(request.id);
+      void runBooking(request, body.tamper ?? 'none');
       res.writeHead(202, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ started: true }));
     });
@@ -215,5 +322,8 @@ createServer((req, res) => {
   res.end('not found');
 }).listen(PORT, () => {
   console.log(`TravelGuard24 demo  ->  http://localhost:${PORT}`);
-  console.log(`policy: ${policy.org} · cap ${(policy.budgetCapMinor / 100).toFixed(2)} ${policy.currency}`);
+  console.log(`policy:  ${policy.org} · cap ${(policy.budgetCapMinor / 100).toFixed(2)} ${policy.currency}`);
+  console.log(`channel: ${channel.kind} (${channel.address})`);
+  if (wantsIMessage && !linqKey) console.warn('CHANNEL=imessage but LINQ_API_KEY is missing — using the demo channel');
+  void watch();
 });

@@ -59,8 +59,16 @@ function blockedText(decision: PolicyDecision, org: string): string {
     // Stating the fare separately afterwards just repeats what the bullets said.
     lines.push(`Closest I found was ${miss.carrier.name} at ${money(miss.totalAmount, miss.currency)}:`);
     for (const rule of miss.rules.filter((r) => !r.passed)) {
-      // `detail` carries the amplification the engine already computed, e.g. the overage.
-      lines.push(`• ${RULE_LABEL[rule.rule]} — ${groupMoney(rule.detail ?? `${rule.observed}, needs ${rule.expected}`)}`);
+      // `detail` is the engine's amplification — "policy allows economy only", "over by
+      // 5804.08 AUD". It states the requirement but not always what was asked for, so the
+      // observed value leads: "policy allows economy only" alone never tells the traveller
+      // that they asked for business.
+      //
+      // The exception is a rule whose observed value IS the fare total, which the line
+      // above already gave. Repeating it reads as a second, different number.
+      const repeatsTotal = rule.observed.startsWith(miss.totalAmount);
+      const lead = repeatsTotal ? '' : `${rule.observed}, `;
+      lines.push(`• ${RULE_LABEL[rule.rule]} — ${groupMoney(lead + (rule.detail ?? `needs ${rule.expected}`))}`);
     }
     lines.push('');
   }
