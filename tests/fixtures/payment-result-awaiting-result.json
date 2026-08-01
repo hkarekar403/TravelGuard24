@@ -1,0 +1,34 @@
+{
+  "session_id": "ses_01KYEQSY6BW07EJGER6BJ02YGF",
+  "order_id": "ord_01KYEQSY6BW07EJGER6BJ02YGG",
+  "status": "awaiting_result",
+  "transactions": [
+    {
+      "txn_id": "txn_01KYER880BZXSQSAG5TGVZAGAF",
+      "status": "awaiting_result",
+      "line_items": [
+        {
+          "txn_ref_id": "tli_01KYER880N38ZNZTMH9PA2A9TW",
+          "merchant_name": "TravelGuard24",
+          "merchant_url": "https://travelguard24-demo.vercel.app",
+          "total_amount": "1202.75",
+          "status": "credentials_generated",
+          "token": "4111111111111111",
+          "dynamic_cvv": "999",
+          "expiry_month": "12",
+          "expiry_year": "2030",
+          "products": [
+            {
+              "product_ref_id": "prd_01KYER8Z2ES2AVXJX58XQVD4DR",
+              "external_product_id": "B6LDNQ",
+              "name": "Flight SYD-LHR return 2026-09-15 / 2026-09-25, economy, PNR B6LDNQ",
+              "unit_price": "1202.75",
+              "quantity": 1
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "_note": "Redacted copy of a real sandbox payment-result. Structure is verbatim; token, dynamic_cvv and expiry are synthetic. Never commit the raw capture - it contains a live network token."
+}
