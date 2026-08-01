@@ -150,9 +150,11 @@ export function composeReply(outcome: BookingOutcome, opts: { org?: string } = {
 
   switch (outcome.status) {
     case 'CONFIRMED': {
-      const carrier = outcome.decision.selected?.carrier.name ?? 'your airline';
+      // The carrier BOOKED, never the one the gate selected. When an airline refuses to
+      // hold the cheapest compliant fare the booking moves to another, and naming the
+      // wrong one tells the traveller they are flying an airline they are not.
       return [
-        `Booked. ${carrier}, confirmation ${outcome.pnr}.`,
+        `Booked. ${outcome.carrier.name}, confirmation ${outcome.pnr}.`,
         outcome.eTicketNumber ? `E-ticket ${outcome.eTicketNumber} issued.` : 'E-ticket issued.',
         '',
         `Charged ${money(outcome.amount, outcome.currency)} on a one-time credential locked to that exact amount.`,

@@ -136,6 +136,7 @@ describe('composeReply', () => {
       eTicketNumber: '0123456789',
       amount: '1202.75',
       currency: 'AUD',
+      carrier: { iata: 'ZZ', name: 'Duffel Airways' },
       decision: { ...blocked(), outcome: 'APPROVED', selected, compliant: [selected] },
       redemption: { accepted: true, checks: [] },
     });
@@ -145,6 +146,27 @@ describe('composeReply', () => {
     expect(text).toContain('Duffel Airways');
     // Decision 1, stated to the person paying: locked to the price, not to the cap.
     expect(text).toContain('exact amount');
+  });
+
+  it('names the carrier BOOKED, not the one the gate picked', () => {
+    // Seen live: the gate chose Iberia, Iberia refused the hold, American Airlines was
+    // booked — and the confirmation said "Booked. Iberia." A traveller was told they were
+    // flying an airline they were not.
+    const selected = offer({ compliant: true, failedRules: [], carrier: { iata: 'IB', name: 'Iberia' } });
+    const text = composeReply({
+      status: 'CONFIRMED',
+      pnr: 'A7AFCZ',
+      sessionId: 's',
+      eTicketNumber: '0123456789',
+      amount: '1214.20',
+      currency: 'AUD',
+      carrier: { iata: 'AA', name: 'American Airlines' },
+      decision: { ...blocked(), outcome: 'APPROVED', selected, compliant: [selected] },
+      redemption: { accepted: true, checks: [] },
+    });
+
+    expect(text).toContain('American Airlines');
+    expect(text).not.toContain('Iberia');
   });
 });
 

@@ -73,6 +73,14 @@ export type BookingOutcome =
       eTicketNumber: string | null;
       amount: string;
       currency: string;
+      /**
+       * The carrier actually booked.
+       *
+       * NOT `decision.selected.carrier` — after a hold refusal the booking lands on a
+       * later compliant offer, and reading the selected one told a traveller they were
+       * flying an airline they were not.
+       */
+      carrier: { iata: string; name: string };
       decision: PolicyDecision;
       redemption: RedemptionResult;
     };
@@ -318,6 +326,7 @@ export async function bookTrip(req: BookingRequest, deps: Dependencies): Promise
     eTicketNumber: eTicket?.uniqueIdentifier ?? null,
     amount: order.totalAmount,
     currency: order.totalCurrency,
+    carrier: held.offer.carrier,
     decision,
     redemption,
   };
