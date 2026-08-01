@@ -105,23 +105,80 @@ function findRoute(text: string): { origin: string | undefined; destination: str
   return { origin: hits[0]?.code, destination: hits[1]?.code };
 }
 
-/** "15–25 Sept" / "15 to 25 September" / "Sept 15-25" → a date pair. */
+/**
+ * Date extraction.
+ *
+ * TWO FAILURES THIS REPLACES, both found on camera (2026-08-02):
+ *
+ *  - The old range regex was a bare `(\d{1,2})...(\d{1,2})`, so it read **26 out of 2026**:
+ *    "25 September 2026 to 28th September 2026" booked 26–28 Sep. A wrong date that still
+ *    looks plausible is the worst kind, because nothing downstream can detect it.
+ *  - It also required the two numbers to be adjacent to the separator, so
+ *    "25 September to 28 September" matched nothing and fell back to the demo defaults
+ *    **silently under an assumption message nobody reads as an error**.
+ *
+ * The rule now: a number only counts as a day if it is anchored to a month name. That is
+ * what keeps "$1,200", "1500 AUD" and "10K" from being read as dates, and it is why the
+ * two forms below are matched explicitly rather than by scanning for loose digits.
+ */
+
+/** A day, optionally ordinal, that is not a fragment of a longer number ("2026", "1500"). */
+const DAY = String.raw`(?<!\d)(\d{1,2})(?:st|nd|rd|th)?(?!\d)`;
+const MONTH_NAME = String.raw`(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*`;
+const RANGE_SEP = String.raw`\s*(?:[–—-]|to|until|through)\s*`;
+
+/** "september" / "sept" / "sep" → 9. */
+function monthOf(word: string): number | undefined {
+  const key = word.toLowerCase();
+  return MONTHS[key.slice(0, 4)] ?? MONTHS[key.slice(0, 3)];
+}
+
 function findDates(text: string, year: number): { departureDate: string | undefined; returnDate: string | undefined } {
-  const month = Object.keys(MONTHS).find((m) => new RegExp(`\\b${m}`, 'i').test(text));
-  if (!month) return { departureDate: undefined, returnDate: undefined };
-  const mm = MONTHS[month];
-  if (mm === undefined) return { departureDate: undefined, returnDate: undefined };
+  const none = { departureDate: undefined, returnDate: undefined };
 
-  const range = text.match(/(\d{1,2})\s*(?:–|-|—|to|until)\s*(\d{1,2})/);
-  if (!range) return { departureDate: undefined, returnDate: undefined };
-  const from = Number(range[1]);
-  const to = Number(range[2]);
-  if (!from || !to) return { departureDate: undefined, returnDate: undefined };
+  const format = (day: number, month: number, y: number): string | undefined =>
+    day >= 1 && day <= 31 ? `${y}-${pad(month)}-${pad(day)}` : undefined;
 
-  return {
-    departureDate: `${year}-${pad(mm)}-${pad(from)}`,
-    returnDate: `${year}-${pad(mm)}-${pad(to)}`,
+  const build = (
+    dep: { day: number; month: number },
+    ret: { day: number; month: number },
+  ): { departureDate: string | undefined; returnDate: string | undefined } => {
+    // A return in an earlier month is the following year — "28 Dec to 3 Jan".
+    const retYear = ret.month < dep.month ? year + 1 : year;
+    const departureDate = format(dep.day, dep.month, year);
+    const returnDate = format(ret.day, ret.month, retYear);
+    return departureDate && returnDate ? { departureDate, returnDate } : none;
   };
+
+  // 1. A range that names its month once: "15-25 Sept", "25th to 28th September".
+  const rangeThenMonth = new RegExp(`${DAY}${RANGE_SEP}${DAY}\\s+${MONTH_NAME}`, 'i').exec(text);
+  if (rangeThenMonth) {
+    const mm = monthOf(rangeThenMonth[3]!);
+    if (mm) return build({ day: Number(rangeThenMonth[1]), month: mm }, { day: Number(rangeThenMonth[2]), month: mm });
+  }
+
+  // 2. Month first: "Sept 15-25".
+  const monthThenRange = new RegExp(`${MONTH_NAME}\\s+${DAY}${RANGE_SEP}${DAY}`, 'i').exec(text);
+  if (monthThenRange) {
+    const mm = monthOf(monthThenRange[1]!);
+    if (mm) return build({ day: Number(monthThenRange[2]), month: mm }, { day: Number(monthThenRange[3]), month: mm });
+  }
+
+  // 3. Two independent day+month mentions, in either order and with years present:
+  //    "25 September 2026 to 28th September 2026", "25 Sept to 3 Oct".
+  const pair = new RegExp(`(?:${DAY}\\s+${MONTH_NAME})|(?:${MONTH_NAME}\\s+${DAY})`, 'gi');
+  const found: Array<{ day: number; month: number }> = [];
+  for (const m of text.matchAll(pair)) {
+    const day = m[1] ?? m[4];
+    const monthWord = m[2] ?? m[3];
+    if (!day || !monthWord) continue;
+    const mm = monthOf(monthWord);
+    if (mm) found.push({ day: Number(day), month: mm });
+    if (found.length === 2) break;
+  }
+  if (found.length === 2) return build(found[0]!, found[1]!);
+
+  return none;
 }
 
 /**

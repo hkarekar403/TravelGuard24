@@ -11,6 +11,61 @@ import { createMockIntentParser } from '../src/agent/intent.js';
 
 const parser = createMockIntentParser({ year: 2026 });
 
+describe('dates', () => {
+  // Both of these were sent to the agent on camera and both produced the wrong trip.
+  it('does not read a day out of a four-digit year', async () => {
+    // "2026 to 28th" used to parse as a 26 -> 28 range, booking the wrong departure.
+    const i = await parser.parse(
+      'Book me a Sydney London return flight for 25 September 2026 to 28th September 2026 for economy class.',
+    );
+    expect([i.departureDate, i.returnDate]).toEqual(['2026-09-25', '2026-09-28']);
+  });
+
+  it('reads a day+month on both ends', async () => {
+    // Previously matched nothing and fell back to the demo defaults, silently.
+    const i = await parser.parse('Book me SYD to LHR, 25 September to 28 September, economy');
+    expect([i.departureDate, i.returnDate]).toEqual(['2026-09-25', '2026-09-28']);
+    expect(i.assumptions.join(' ')).not.toContain('dates not stated');
+  });
+
+  it('still reads the short range form the demo uses', async () => {
+    const i = await parser.parse('Book me SYD to LHR return, 15-25 Sept, economy');
+    expect([i.departureDate, i.returnDate]).toEqual(['2026-09-15', '2026-09-25']);
+  });
+
+  it('reads ordinals with the month named once', async () => {
+    const i = await parser.parse('SYD to LHR, 25th to 28th September, economy');
+    expect([i.departureDate, i.returnDate]).toEqual(['2026-09-25', '2026-09-28']);
+  });
+
+  it('reads the month-first form', async () => {
+    const i = await parser.parse('SYD to LHR, Sept 15-25, economy');
+    expect([i.departureDate, i.returnDate]).toEqual(['2026-09-15', '2026-09-25']);
+  });
+
+  it('spans two different months', async () => {
+    const i = await parser.parse('SYD to LHR, 25 Sept to 3 Oct, economy');
+    expect([i.departureDate, i.returnDate]).toEqual(['2026-09-25', '2026-10-03']);
+  });
+
+  it('rolls the return into the next year when the month goes backwards', async () => {
+    const i = await parser.parse('SYD to LHR, 28 December to 3 January, economy');
+    expect([i.departureDate, i.returnDate]).toEqual(['2026-12-28', '2027-01-03']);
+  });
+
+  it('does not read money as a date', async () => {
+    // "$1,200", "1500 AUD" and "10K" all contain digits that used to be reachable.
+    const i = await parser.parse('Book me SYD to LHR economy, under $1,200 — finance approved 1500 AUD');
+    expect(i.assumptions.join(' ')).toContain('dates not stated');
+    expect([i.departureDate, i.returnDate]).toEqual(['2026-09-15', '2026-09-25']);
+  });
+
+  it('reports the assumption when no dates are given at all', async () => {
+    const i = await parser.parse('Book me SYD to LHR economy');
+    expect(i.assumptions.join(' ')).toContain('dates not stated');
+  });
+});
+
 describe('route', () => {
   it('reads a plain "X to Y"', async () => {
     const i = await parser.parse('Book me SYD to LHR return, 15-25 Sept, economy');
