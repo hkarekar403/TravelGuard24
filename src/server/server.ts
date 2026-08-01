@@ -23,6 +23,7 @@ import { createSimulatedMerchant } from '../merchant/simulated-merchant.js';
 import { createHashChainAudit } from '../audit/hash-chain.js';
 import { bookTrip } from '../orchestrator/orchestrator.js';
 import { evaluate } from '../policy/engine.js';
+import { createSensoClient, resolvePolicy } from '../policy/senso.js';
 import type { Policy } from '../policy/types.js';
 import type { Clock } from '../orchestrator/ports.js';
 import { createMockIntentParser } from '../agent/intent.js';
@@ -44,7 +45,7 @@ import {
 const PORT = Number(process.env.PORT ?? 3000);
 const ROOT = new URL('../../', import.meta.url);
 
-const policy = JSON.parse(readFileSync(fileURLToPath(new URL('policy.json', ROOT)), 'utf8')) as Policy;
+const localPolicy = JSON.parse(readFileSync(fileURLToPath(new URL('policy.json', ROOT)), 'utf8')) as Policy;
 
 const clock: Clock = { now: () => new Date(), sleep: (ms) => new Promise((r) => setTimeout(r, ms)) };
 
@@ -73,6 +74,33 @@ const linqKey = process.env['LINQ_API_KEY'] ?? env['LINQ_API_KEY'] ?? '';
 
 const channel: InboundChannel =
   wantsIMessage && linqKey ? createLinqChannel({ apiKey: linqKey }) : demoChannel;
+
+// ---------------------------------------------------------------------------
+// Where the RULES come from.
+//
+// `policy.json` restates rules that actually live in a signed document. When Senso is
+// configured, the rules are retrieved from that document instead, so the audit trail cites
+// the clause that authorises the spend rather than a literal a developer typed.
+//
+// This cannot widen the policy and cannot fail the run — see `policy/senso.ts`. Resolution
+// happens once, at startup, so a booking never waits on it.
+// ---------------------------------------------------------------------------
+const sensoKey = process.env['SENSO_API_KEY'] ?? env['SENSO_API_KEY'] ?? '';
+const resolvedPolicy = await resolvePolicy({
+  local: localPolicy,
+  client: sensoKey ? createSensoClient(sensoKey) : undefined,
+});
+const policy = resolvedPolicy.policy;
+const policyProvenance = resolvedPolicy.provenance;
+
+{
+  const p = policyProvenance;
+  const where = p.source === 'senso' ? `senso (${p.citations.join('; ') || 'no citations returned'})` : `policy.json (${p.reason})`;
+  console.log(`policy ${policy.version} from ${where}`);
+  if (p.tightened.length > 0) console.log(`  tightened: ${p.tightened.join(', ')}`);
+  if (p.rejected?.length) console.log(`  rejected retrieval: ${p.rejected.join(', ')}`);
+  if (p.detail) console.log(`  detail: ${p.detail}`);
+}
 
 /**
  * Every channel being watched.
@@ -288,7 +316,10 @@ createServer((req, res) => {
 
   if (url.pathname === '/policy') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify(policy));
+    // Provenance rides along so the screen can say where the rules came from. It is a
+    // report of what startup already resolved, not a live check — the column states the
+    // source, and the Senso knowledge base is what evidences it.
+    res.end(JSON.stringify({ ...policy, provenance: policyProvenance }));
     return;
   }
 
