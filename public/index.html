@@ -75,6 +75,7 @@
   .idle{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center}
   .idle .meta{max-width:330px;line-height:1.6}
   .watching{display:flex;align-items:center;gap:9px;font-size:15px}
+  .hdrwatch{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--dim);margin:-8px 0 12px}
   .dot{width:7px;height:7px;border-radius:50%;background:var(--ok);animation:pulse 1.8s ease-in-out infinite}
   @keyframes pulse{0%,100%{opacity:.25}50%{opacity:1}}
   .from{display:flex;align-items:baseline;gap:8px;margin-bottom:5px}
@@ -123,6 +124,12 @@
   <div class="col mid">
     <h2>Agent</h2>
     <div class="sub">Spends only within policy. Checks first, pays second, records both.</div>
+    <!-- Once a run has happened the watching state moves up here, so the journey keeps the
+         whole column. A finished run is nine or ten steps and the ending must not scroll. -->
+    <div class="hdrwatch" id="hdrwatch" hidden>
+      <span class="dot"></span><span id="hdrtext">Watching</span>
+      <button class="ghost" id="again" style="margin-left:auto">New instruction</button>
+    </div>
     <div id="badge"></div>
     <div class="flow" id="flow"></div>
     <div class="idle" id="idle">
@@ -220,9 +227,18 @@ $('#q').oninput = () => { clearTimeout(typing); typing=setTimeout(readBack, 350)
 const CH_LABEL = {demo:'demo', imessage:'iMessage', email:'email'};
 let pendingId = null;
 
-fetch('/channel').then(r=>r.json()).then(c=>{
-  $('#watch').textContent = c.kind==='demo'
+fetch('/channel').then(r=>{ if(!r.ok) throw new Error(String(r.status)); return r.json(); }).then(c=>{
+  const label = c.kind==='demo'
     ? 'Watching for requests' : `Watching ${CH_LABEL[c.kind]||c.kind} · ${c.address}`;
+  $('#watch').textContent = label;
+  $('#hdrtext').textContent = label;
+}).catch(()=>{
+  // Says which side is stale. The page is read from disk on every request, so a reload
+  // picks up new markup while an old server process keeps serving old routes — the
+  // symptom is a page that looks current and a label that never resolves.
+  $('#watch').textContent = 'Not watching — server needs restarting';
+  $('#watch').previousElementSibling.style.background = 'var(--no)';
+  $('#watch').previousElementSibling.style.animation = 'none';
 });
 
 /* The sheet is opened BY AN ARRIVING MESSAGE, not by a button. The traveller's words are
@@ -243,10 +259,12 @@ function openSheet(request){
 
 // Asks the server to inject a message into the demo channel. It cannot fabricate an
 // inbound iMessage — so anything on screen during a real run really did arrive.
-$('#trigger').onclick = () => {
+const simulate = () => {
   fetch('/simulate',{method:'POST',headers:{'Content-Type':'application/json'},
     body:JSON.stringify({text:$('#q').value})});
 };
+$('#trigger').onclick = simulate;
+$('#again').onclick = simulate;
 $('#cancel').onclick = () => { $('#scrim').hidden=true; pendingId=null; };
 document.onkeydown = (ev) => { if(ev.key==='Escape' && !$('#scrim').hidden) $('#cancel').onclick(); };
 
@@ -601,13 +619,10 @@ new EventSource('/events').onmessage = (m) => {
 
   if(e.type==='finished'){
     clearInterval(ticker); ticker=null;
-    // The way back is a fresh instruction, not a re-enabled Send button.
-    const idle=$('#idle');
-    idle.style.display='flex';
-    idle.style.flex='0 0 auto';
-    idle.style.paddingTop='12px';
-    idle.querySelector('button').textContent='New instruction';
-    idle.querySelector('.meta')?.remove();
+    // The agent goes back to watching, but from the header — the finished journey needs
+    // the whole column, and the ending is the screenshot that has to fit.
+    $('#idle').style.display='none';
+    $('#hdrwatch').hidden=false;
     // Restated once everything has landed. Reading the count while rendering the
     // confirmed block depends on the last audit entry having arrived first, which is
     // true of the orchestrator today and is not a thing this screen should rely on —
