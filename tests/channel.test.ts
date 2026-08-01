@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { composeReply, groupMoney } from '../src/channel/outcome.js';
+import { composeApproval, composeReply, groupMoney } from '../src/channel/outcome.js';
 import { createDemoChannel } from '../src/channel/demo.js';
 import { createSeenSet } from '../src/channel/types.js';
 import type { BookingOutcome } from '../src/orchestrator/orchestrator.js';
@@ -145,6 +145,35 @@ describe('composeReply', () => {
     expect(text).toContain('Duffel Airways');
     // Decision 1, stated to the person paying: locked to the price, not to the cap.
     expect(text).toContain('exact amount');
+  });
+});
+
+describe('composeApproval', () => {
+  const offer = { carrier: { name: 'British Airways' }, totalAmount: '1222.00', currency: 'AUD' };
+  const url = 'https://sandbox.collect.prava.space?session=ses_01KYYGJN945R3TD1HD8AH5T083';
+
+  it('ends with the link, so nothing is stranded below a wrapped URL', () => {
+    // A session URL wraps to ~4 lines on a phone. Anything after it is buried, and what
+    // would be buried is the terms of the mandate.
+    const lines = composeApproval(offer, url).split('\n');
+
+    expect(lines[lines.length - 1]).toBe(url);
+    expect(composeApproval(offer, url).indexOf('Locked to this merchant')).toBeLessThan(
+      composeApproval(offer, url).indexOf(url),
+    );
+  });
+
+  it('states the amount and the lock before asking for a tap', () => {
+    const text = composeApproval(offer, url);
+
+    expect(text).toContain('1,222.00 AUD');
+    expect(text).toContain('this exact amount');
+    expect(text).toContain('British Airways');
+  });
+
+  it('sends the URL bare — never shortened or hidden behind a label', () => {
+    // The traveller must be able to see where a payment link goes before tapping it.
+    expect(composeApproval(offer, url)).toContain('sandbox.collect.prava.space');
   });
 });
 

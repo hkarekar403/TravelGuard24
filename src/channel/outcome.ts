@@ -117,14 +117,20 @@ export function composeApproval(
   url: string,
   opts: { rules?: number } = {},
 ): string {
+  // The link goes LAST. A session URL wraps to about four lines on a phone, so anything
+  // after it is stranded below a wall of blue text — and what is stranded would be the
+  // terms of the mandate. Read order should be: what, why, on what terms, then tap.
+  //
+  // The URL is sent bare and unshortened on purpose. `collect.prava.space` is visible
+  // before the traveller taps, and hiding where a payment link goes is exactly the
+  // pattern people are told to distrust.
   return [
     `${offer.carrier.name} — ${money(offer.totalAmount, offer.currency)}.`,
     `Passes all ${opts.rules ?? 4} policy rules, and it's the cheapest fare that does.`,
+    `Locked to this merchant and this exact amount. Expires in 15 minutes.`,
     '',
     'Approve with your passkey:',
     url,
-    '',
-    `Locked to this merchant and this exact amount. Expires in 15 minutes.`,
   ].join('\n');
 }
 
