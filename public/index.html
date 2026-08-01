@@ -75,6 +75,9 @@
   .idle{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center}
   .idle .meta{max-width:330px;line-height:1.6}
   .scrim{position:fixed;inset:0;background:rgba(3,6,10,.74);display:grid;place-items:center;z-index:10;animation:in .16s ease}
+  /* `display:grid` above outranks the UA rule for [hidden], so the attribute alone does
+     not hide it — the sheet stayed over a running booking. */
+  .scrim[hidden]{display:none}
   .sheet{width:min(560px,92vw);background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:17px 18px 15px;box-shadow:0 22px 60px rgba(0,0,0,.6)}
   .who{font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin:0 0 5px}
   .bub{border-radius:11px;padding:11px 13px;font-size:13.5px;margin-bottom:12px}
