@@ -163,6 +163,17 @@ function close(id, summary, kind){
   if(summary!==undefined){ el.querySelector('.sum').textContent = summary; el.querySelector('.bd').innerHTML=''; }
 }
 
+/* Truncate at the first zero and name the rule that emptied it. A run of repeated
+   zeros reads as a rendering fault rather than a funnel. */
+function funnelStr(total, funnel){
+  const parts=[String(total)];
+  for(const f of funnel){
+    parts.push(String(f.remaining));
+    if(f.remaining===0) return `${parts.join(' → ')} <span style="opacity:.8">— all excluded at ${f.rule.replace(/_/g,' ')}</span>`;
+  }
+  return parts.join(' → ');
+}
+
 const ruleRows = (rules) => rules.map(r=>`<tr>
   <td class="${r.passed?'pass':'fail'}">${r.passed?'✓':'✕'}</td>
   <td class="lbl">${r.rule.replace(/_/g,' ')}</td>
@@ -189,8 +200,8 @@ new EventSource('/events').onmessage = (m) => {
   }
 
   if(e.type==='decided'){
-    const d=e.decision, f=d.funnel.map(x=>x.remaining);
-    const funnel = `${d.totalOffers} → ${f.join(' → ')}`;
+    const d=e.decision;
+    const funnel = funnelStr(d.totalOffers, d.funnel);
     if(d.outcome==='APPROVED'){
       const s=d.selected;
       body('gate').innerHTML =
@@ -207,8 +218,8 @@ new EventSource('/events').onmessage = (m) => {
       const nm=d.nearestMiss, ch=d.cheapestOverall;
       body('gate').innerHTML =
         `<div class="tick" style="margin-bottom:9px">Evaluating 4 rules … <b>${funnel}</b></div>
-         <div class="carrier">Nearest miss — ${nm?.carrier.name??'—'}</div>
-         <div class="price" style="margin:2px 0 8px">${nm?.totalAmount??'—'} <span class="meta" style="font-size:13px">${nm?.currency??''}</span></div>
+         <div class="carrier meta">Nearest miss — <span style="color:var(--ink)">${nm?.carrier.name??'—'}</span></div>
+         <div class="price" style="margin:2px 0 8px;color:var(--warn)">${nm?.totalAmount??'—'} <span class="meta" style="font-size:13px">${nm?.currency??''}</span></div>
          <table class="checks">${nm?ruleRows(nm.rules.filter(r=>!r.passed)):''}</table>
          <div class="why">${d.totalOffers} offers evaluated. None compliant.${ch&&ch.offerId!==nm?.offerId?`<br>Cheapest available ${ch.totalAmount} ${ch.currency} — ${ch.failedRules.length} rules short.`:''}</div>
          <div class="banner"><b>No payment session was created.</b> The agent did not fail to pay — it declined to.</div>`;
