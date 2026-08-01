@@ -33,28 +33,38 @@ const RULE_LABEL: Record<RuleId, string> = {
 /** "1202.75" + "AUD" -> "1,202.75 AUD". Never parses to float. */
 function money(amount: string, currency: string): string {
   const [whole = '0', frac] = amount.split('.');
-  const grouped = whole.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-  return `${grouped}${frac ? `.${frac}` : ''} ${currency}`;
+  return `${group(whole)}${frac ? `.${frac}` : ''} ${currency}`;
 }
 
-function blockedText(decision: PolicyDecision): string {
+const group = (whole: string) => whole.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+
+/**
+ * Groups thousands in any money-shaped number inside a string.
+ *
+ * The policy engine's `observed` and `detail` are authoritative and are rendered verbatim
+ * on screen, so they are not changed at source. But dropping them into a message beside a
+ * formatted total produced "7104.08 AUD" and "7,104.08 AUD" in the same bubble, which
+ * looks like two different numbers at a glance.
+ */
+export function groupMoney(text: string): string {
+  return text.replace(/\b(\d{4,})(\.\d{2})\b/g, (_, whole: string, frac: string) => `${group(whole)}${frac}`);
+}
+
+function blockedText(decision: PolicyDecision, org: string): string {
   const miss = decision.nearestMiss;
-  const lines = [`I couldn't book that — it doesn't pass ${decision.policyVersion} travel policy.`, ''];
+  const lines = [`I couldn't book that — it doesn't pass ${org} travel policy.`, ''];
 
   if (miss) {
-    const failed = miss.rules.filter((r) => !r.passed);
-    for (const rule of failed) {
+    // The failures belong to a specific fare, so name it first and hang them off it.
+    // Stating the fare separately afterwards just repeats what the bullets said.
+    lines.push(`Closest I found was ${miss.carrier.name} at ${money(miss.totalAmount, miss.currency)}:`);
+    for (const rule of miss.rules.filter((r) => !r.passed)) {
       // `detail` carries the amplification the engine already computed, e.g. the overage.
-      lines.push(`• ${RULE_LABEL[rule.rule]}: ${rule.observed} — ${rule.detail ?? rule.expected}`);
+      lines.push(`• ${RULE_LABEL[rule.rule]} — ${groupMoney(rule.detail ?? `${rule.observed}, needs ${rule.expected}`)}`);
     }
     lines.push('');
-    lines.push(
-      `Closest option was ${miss.carrier.name} at ${money(miss.totalAmount, miss.currency)}, ` +
-        `and ${failed.length === 1 ? 'that rule' : 'those rules'} still failed.`,
-    );
   }
 
-  lines.push('');
   lines.push(`I checked ${decision.totalOffers} fares. None qualified, so I never requested payment. Nothing was charged.`);
   return lines.join('\n');
 }
@@ -66,7 +76,11 @@ function blockedText(decision: PolicyDecision): string {
  * after "book me a flight" is the worst possible behaviour: the traveller does not know
  * whether they have a seat, and does not know whether they have been charged.
  */
-export function composeReply(outcome: BookingOutcome): string {
+export function composeReply(outcome: BookingOutcome, opts: { org?: string } = {}): string {
+  // The policy VERSION is an internal identifier. A traveller should be told whose rules
+  // these are, not which revision of them.
+  const org = opts.org ? `${opts.org}'s` : 'your';
+
   switch (outcome.status) {
     case 'CONFIRMED': {
       const carrier = outcome.decision.selected?.carrier.name ?? 'your airline';
@@ -80,7 +94,7 @@ export function composeReply(outcome: BookingOutcome): string {
     }
 
     case 'BLOCKED_BY_POLICY':
-      return blockedText(outcome.decision);
+      return blockedText(outcome.decision, org);
 
     case 'NO_BOOKABLE_OFFER': {
       const carriers = [...new Set(outcome.attempts.map((a) => a.carrier))];

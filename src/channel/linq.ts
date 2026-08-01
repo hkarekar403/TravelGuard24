@@ -106,7 +106,12 @@ export function createLinqChannel(opts: LinqOptions): InboundChannel {
     },
 
     async reply(threadId: string, text: string): Promise<void> {
-      await call('POST', `/chats/${threadId}/messages`, { parts: [{ type: 'text', value: text }] });
+      // Parts nest under `message` on the way out, even though they arrive top-level on
+      // a read. Sending `{ parts: [...] }` returns `1005 at least one message part is
+      // required`, which reads as "your part is malformed" rather than "wrong envelope".
+      await call('POST', `/chats/${threadId}/messages`, {
+        message: { parts: [{ type: 'text', value: text }] },
+      });
     },
   };
 }

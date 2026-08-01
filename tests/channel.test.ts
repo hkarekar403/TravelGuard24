@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { composeReply } from '../src/channel/outcome.js';
+import { composeReply, groupMoney } from '../src/channel/outcome.js';
 import { createDemoChannel } from '../src/channel/demo.js';
 import { createSeenSet } from '../src/channel/types.js';
 import type { BookingOutcome } from '../src/orchestrator/orchestrator.js';
@@ -44,12 +44,31 @@ const blocked = (): PolicyDecision => ({
 
 describe('composeReply', () => {
   it('names every failed rule and the overage when blocked', () => {
-    const text = composeReply({ status: 'BLOCKED_BY_POLICY', decision: blocked() });
+    const text = composeReply({ status: 'BLOCKED_BY_POLICY', decision: blocked() }, { org: 'Acme Corp' });
 
-    expect(text).toContain('cabin class: business');
-    expect(text).toContain('budget cap: 7104.08 AUD — over by 5804.08 AUD');
+    expect(text).toContain('cabin class — business');
+    expect(text).toContain('budget cap — over by 5,804.08 AUD');
+    // Whose rules these are, not which revision of them.
+    expect(text).toContain("Acme Corp's travel policy");
+    expect(text).not.toContain('v1 travel policy');
     // A refusal without the number tells the traveller nothing actionable.
     expect(text).toContain('462');
+  });
+
+  it('formats every amount the same way within one message', () => {
+    // "7104.08" beside "7,104.08" in one bubble reads as two different numbers.
+    const text = composeReply({ status: 'BLOCKED_BY_POLICY', decision: blocked() });
+
+    expect(text).toContain('7,104.08 AUD');
+    expect(text).not.toMatch(/\b7104\.08\b/);
+  });
+
+  it('groups thousands without touching years, PNRs or small numbers', () => {
+    expect(groupMoney('over by 5804.08 AUD')).toBe('over by 5,804.08 AUD');
+    expect(groupMoney('45 days')).toBe('45 days');
+    expect(groupMoney('departs 2026-09-15')).toBe('departs 2026-09-15');
+    expect(groupMoney('reservation ABC123')).toBe('reservation ABC123');
+    expect(groupMoney('123.45 AUD')).toBe('123.45 AUD');
   });
 
   it('says "Nothing was charged" verbatim on every outcome where no money moved', () => {
