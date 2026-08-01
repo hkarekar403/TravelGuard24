@@ -110,7 +110,7 @@ async function main(): Promise<void> {
     description: `Flight SYD-LHR return, economy, PNR ${order.bookingReference}`,
     userId: 'test_user_002',
     userEmail: 'traveler@travelguard24-demo.vercel.app',
-    cardId: 'card_01KYCD9WY2SG0Y3VN1NVF93Q1W',
+    cardId: '',
   });
   console.log(`   ${session.sessionId} in ${ms(t)}`);
   console.log(`   expires ${session.expiresAt}`);

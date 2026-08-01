@@ -63,9 +63,17 @@ export function createPravaClient(opts: PravaClientOptions): PravaPort {
         description: req.description,
         user_email: req.userEmail,
         user_id: req.userId,
-        // Pre-selects the enrolled card so the checkout opens straight into the saved
-        // card rather than a picker. Verified 201 against the live sandbox.
-        card: { card_id: req.cardId },
+        // Card pre-selection is OPT-IN and off by default.
+        //
+        // Sending `card: { card_id }` returns 201 and looks correct from the API, but the
+        // hosted checkout then renders the order summary and never offers a card or a
+        // passkey — no button, no progression, session stuck at `pending` with an empty
+        // transactions array. Verified live on 1 Aug against a session that was otherwise
+        // identical to four that completed fine without it.
+        //
+        // The API-level 201 is what makes this dangerous: it validates, so nothing warns
+        // you until a human opens the page.
+        ...(req.cardId ? { card: { card_id: req.cardId } } : {}),
         purchase_context: [
           {
             effective_until_minutes: opts.effectiveUntilMinutes ?? 30,

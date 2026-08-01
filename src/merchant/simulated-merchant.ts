@@ -20,6 +20,8 @@
  * session are detected and rejected; in our capture that did not fire.
  */
 
+import { createHash } from 'node:crypto';
+
 import { amountsEqual, MalformedAmountError } from '../money.js';
 import type {
   MandateExpectation,
@@ -60,6 +62,19 @@ export function inMemorySeenStore(): SeenCredentialStore {
  */
 function replayKeys(c: PaymentCredential): string[] {
   return [`txn:${c.txnRefId}`, `cred:${c.token}:${c.dynamicCvv}`];
+}
+
+/**
+ * Short, non-reversible label for a credential presentation.
+ *
+ * Used instead of printing the dynamic CVV. The check result is written to the audit log,
+ * which is the artifact most likely to end up in a screenshot or a submission — so it must
+ * not carry a live credential value, one-time or not. A fingerprint reads better on screen
+ * anyway, and it still changes visibly between presentations, which is the point being
+ * demonstrated.
+ */
+export function credentialFingerprint(c: PaymentCredential): string {
+  return createHash('sha256').update(`${c.token}:${c.dynamicCvv}`).digest('hex').slice(0, 8);
 }
 
 export type SimulatedMerchantOptions = {
@@ -112,10 +127,11 @@ export function createSimulatedMerchant(opts: SimulatedMerchantOptions): Merchan
       // -- 3. Replay --------------------------------------------------------
       const keys = replayKeys(credential);
       const replayed = keys.some((k) => store.has(k));
+      const fingerprint = credentialFingerprint(credential);
       checks.push({
         check: 'credential_not_replayed',
         passed: !replayed,
-        observed: replayed ? `cvv ${credential.dynamicCvv} already redeemed` : `cvv ${credential.dynamicCvv} unseen`,
+        observed: replayed ? `credential ${fingerprint} already redeemed` : `credential ${fingerprint} unseen`,
         expected: 'first presentation',
       });
       if (replayed) return reject();

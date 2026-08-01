@@ -74,7 +74,13 @@ export type CreateSessionRequest = {
   description: string;
   userId: string;
   userEmail: string;
-  /** Pre-select the enrolled card rather than trusting Prava to choose. */
+  /**
+   * OPT-IN card pre-selection, empty by default.
+   *
+   * Setting this breaks the hosted checkout: the page renders the order and never offers
+   * a card or passkey. Left here because the field is real and may be fixed vendor-side,
+   * but it must stay empty for anything a human has to complete.
+   */
   cardId: string;
 };
 
