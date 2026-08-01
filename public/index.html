@@ -410,7 +410,10 @@ new EventSource('/events').onmessage = (m) => {
 
   if(e.type==='held'){
     holdParts().now.innerHTML =
-      `<div class="tick">PNR <b>${e.pnr}</b> · ${e.carrier} · ${e.amount} ${e.currency} <span class="meta">— reserved, nothing paid yet</span></div>`;
+      `<div class="tick">PNR <b>${e.pnr}</b> · ${e.carrier} · ${e.amount} ${e.currency} <span class="meta">— reserved, nothing paid yet</span></div>
+       ${refusals?`<div class="why">Not the offer the gate quoted — that carrier refused to hold it.
+         This one also cleared all 4 rules, and <b>${e.amount} ${e.currency}</b> is what the mandate
+         locks to. The gate decides which purchase may exist; the mandate locks the purchase that did.</div>`:''}`;
     // Keep the refusals visible in the collapsed summary; they explain the carrier.
     const el = document.getElementById('s-hold');
     if(el){
