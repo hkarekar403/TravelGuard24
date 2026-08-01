@@ -23,6 +23,9 @@
   .rule .v{font-size:13.5px;margin-top:1px}
   .src{margin-top:13px;font-family:var(--mono);font-size:10.5px;color:var(--dim);line-height:1.55;word-break:break-word}
   .src b{color:var(--ink);font-weight:500}
+  /* Kept on one line — the tick splitting from the word it qualifies reads as a rendering
+     fault on camera, and this line is in frame for the whole demo. */
+  .src .vfd{color:var(--ok);white-space:nowrap}
   .scope{margin-top:16px;padding:9px 10px;border:1px dashed var(--line);border-radius:6px;font-size:11px;color:var(--dim);line-height:1.45}
 
   /* ── B ── */
@@ -201,7 +204,7 @@ fetch('/policy').then(r=>r.json()).then(p=>{
   if (pv) {
     const cited = pv.citations && pv.citations.length ? pv.citations[0] : null;
     $('#source').innerHTML = pv.source === 'senso'
-      ? `source <b>${esc(cited || 'verified document')}</b> <span style="color:var(--ok)">✓ verified</span>
+      ? `source <b>${esc(cited || 'verified document')}</b> <span class="vfd">✓ verified</span>
          ${pv.tightened && pv.tightened.length ? `<br><span style="color:var(--warn)">tightened: ${esc(pv.tightened.join(', '))}</span>` : ''}`
       : `source <b>policy.json</b> <span style="opacity:.7">— committed baseline (${esc(pv.reason)})</span>`;
   }
