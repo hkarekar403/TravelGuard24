@@ -6,7 +6,22 @@
       "Bash(curl -s https://docs.prava.space/api-reference/test-cards.md)",
       "Bash(xxd .gitignore)",
       "Bash(git check-ignore *)",
-      "Bash(git add *)"
+      "Bash(git add *)",
+      "Bash(git commit -q -m '@ *)",
+      "Bash(git commit *)",
+      "Bash(git branch *)",
+      "Bash(gh repo *)",
+      "Bash(git ls-tree *)",
+      "Bash(git grep *)",
+      "PowerShell($syd=[TimeZoneInfo]::ConvertTimeBySystemTimeZoneId\\(\\(Get-Date\\).ToUniversalTime\\(\\),'UTC','AUS Eastern Standard Time'\\); \"Sydney: $\\($syd.ToString\\('HH:mm:ss'\\)\\)\"; $dl=Get-Date '2026-08-03 12:00:00'; $r=$dl-$syd; \"To deadline: $\\([math]::Floor\\($r.TotalHours\\)\\)h $\\($r.Minutes\\)m\")",
+      "Bash(python -c ' *)",
+      "PowerShell(Start-Process \"chrome.exe\" \"https://sandbox.collect.prava.space?session=ses_01KYXHVN0EYBRMJ92JCCPJ43XY\")",
+      "PowerShell(\"launched\")",
+      "PowerShell(\"relaunched\")",
+      "Bash(git push *)",
+      "Bash(npm install *)",
+      "Bash(npx tsc *)",
+      "Bash(echo \"TYPECHECK EXIT: $?\")"
     ]
   }
 }
