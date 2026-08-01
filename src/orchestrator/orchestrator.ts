@@ -73,6 +73,14 @@ export type BookingOutcome =
       eTicketNumber: string | null;
       amount: string;
       currency: string;
+      /**
+       * The carrier actually booked.
+       *
+       * NOT `decision.selected.carrier` — after a hold refusal the booking lands on a
+       * later compliant offer, and reading the selected one told a traveller they were
+       * flying an airline they were not.
+       */
+      carrier: { iata: string; name: string };
       decision: PolicyDecision;
       redemption: RedemptionResult;
     };
@@ -204,7 +212,12 @@ export async function bookTrip(req: BookingRequest, deps: Dependencies): Promise
     currency: order.totalCurrency,
     externalOrderRef: order.id,
     productId: order.bookingReference,
-    description: `Flight ${req.search.origin}-${req.search.destination} return, ${req.search.cabinClass}`,
+    // Rendered to the traveller on Prava's checkout and on Visa's authentication screen,
+    // and it is the last thing they read before authorising. Naming the carrier lets them
+    // check it against the fare the agent proposed; "Flight SYD-LHR return" alone is not
+    // something anyone can verify. Uses the HELD carrier, which after a fallback is not
+    // the one the gate first chose.
+    description: `${held.offer.carrier.name} ${req.search.origin}-${req.search.destination} return, ${req.search.cabinClass}`,
     userId: req.userId,
     userEmail: req.userEmail,
     cardId: req.cardId,
@@ -313,6 +326,7 @@ export async function bookTrip(req: BookingRequest, deps: Dependencies): Promise
     eTicketNumber: eTicket?.uniqueIdentifier ?? null,
     amount: order.totalAmount,
     currency: order.totalCurrency,
+    carrier: held.offer.carrier,
     decision,
     redemption,
   };

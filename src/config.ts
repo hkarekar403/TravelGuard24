@@ -10,6 +10,12 @@ import { readFileSync } from 'node:fs';
 export type Config = {
   pravaBaseUrl: string;
   pravaSecretKey: string;
+  /**
+   * Enrolled card to pre-select at checkout. Empty means "let Prava choose", which picks
+   * the customer's default — fine with one card, wrong as soon as there are two and the
+   * default is not the one you want used.
+   */
+  pravaCardId: string;
   duffelBaseUrl: string;
   duffelApiKey: string;
 };
@@ -55,6 +61,8 @@ export function loadConfig(path?: string): Config {
     // Sandbox is a different HOST, not a path prefix on the production one.
     pravaBaseUrl: process.env['PRAVA_BASE_URL'] ?? file['PRAVA_BASE_URL'] ?? 'https://sandbox.api.prava.space',
     pravaSecretKey: get('MERCHANT_SECRET_KEY'),
+    // Optional: without it the checkout offers the default card.
+    pravaCardId: process.env['PRAVA_CARD_ID'] ?? file['PRAVA_CARD_ID'] ?? '',
     duffelBaseUrl: process.env['DUFFEL_BASE_URL'] ?? file['DUFFEL_BASE_URL'] ?? 'https://api.duffel.com',
     duffelApiKey: get('DUFFEL_API_KEY'),
   };

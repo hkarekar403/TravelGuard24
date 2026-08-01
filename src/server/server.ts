@@ -12,7 +12,11 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { spawn } from 'node:child_process';
 
-import { loadConfig } from '../config.js';
+import { loadConfig, loadEnvFile } from '../config.js';
+import { createDemoChannel } from '../channel/demo.js';
+import { createLinqChannel } from '../channel/linq.js';
+import { composeAck, composeApproval, composeReply } from '../channel/outcome.js';
+import type { InboundChannel, InboundRequest } from '../channel/types.js';
 import { createDuffelClient } from '../duffel/client.js';
 import { createPravaClient } from '../prava/client.js';
 import { createSimulatedMerchant } from '../merchant/simulated-merchant.js';
@@ -30,6 +34,7 @@ import {
   instrumentMerchant,
   instrumentPrava,
   type TamperMode,
+  type Emit,
   type UiEvent,
 } from './events.js';
 
@@ -54,27 +59,77 @@ function broadcast(event: UiEvent): void {
 
 const intentParser = createMockIntentParser();
 
-type BookBody = {
-  /** Plain-English instruction. The agent parses it; cabin is not chosen by a control. */
-  instruction?: string;
-  /** Demo affordance: deliberately corrupt the redemption so the guardrail visibly bites. */
-  tamper?: TamperMode;
-};
+// ---------------------------------------------------------------------------
+// Where requests come from.
+//
+// Default is the demo channel, deliberately — the recording has to be reproducible, and
+// Linq has no sandbox, so every rehearsal on iMessage is a real message to a real phone.
+// `CHANNEL=imessage` switches to the real thing.
+// ---------------------------------------------------------------------------
+const env = loadEnvFile();
+const demoChannel = createDemoChannel();
+const wantsIMessage = (process.env['CHANNEL'] ?? env['CHANNEL'] ?? 'demo') === 'imessage';
+const linqKey = process.env['LINQ_API_KEY'] ?? env['LINQ_API_KEY'] ?? '';
 
-async function runBooking(body: BookBody): Promise<void> {
+const channel: InboundChannel =
+  wantsIMessage && linqKey ? createLinqChannel({ apiKey: linqKey }) : demoChannel;
+
+/**
+ * Every channel being watched.
+ *
+ * The demo channel is always among them, even when a real one is active: rehearsing a
+ * screen state should not require sending a real message to a real handset, and the
+ * blocked path in particular gets re-run repeatedly while its layout is being settled.
+ * An injected request is still labelled `demo` on screen, so it can never be mistaken for
+ * something that actually arrived.
+ */
+const watched: InboundChannel[] = channel === demoChannel ? [demoChannel] : [demoChannel, channel];
+
+/** Replies go back to the channel the request came in on, not to the active one. */
+const replyTo = (request: InboundRequest): InboundChannel =>
+  request.channel === 'demo' ? demoChannel : channel;
+
+const POLL_MS = 1_500;
+
+/**
+ * Demo affordance, set from the screen and applied to the next run.
+ *
+ * It lives here rather than travelling with the request because a request now arrives from
+ * a phone and starts on its own — there is no longer a moment where the screen is asked
+ * for permission and could carry it along.
+ */
+let tamperMode: TamperMode = 'none';
+
+async function runBooking(request: InboundRequest, tamper: TamperMode): Promise<void> {
   if (running) return;
   running = true;
   try {
     const config = loadConfig();
-    const emit = broadcast;
 
-    // The instruction is the only input. Everything downstream — including which cabin
-    // gets searched, and therefore whether the policy gate blocks — comes from what the
-    // traveller actually said.
-    const instruction = body.instruction?.trim() || 'Book me SYD to LHR return, 15-25 Sept';
+    // The approval message names the airline, which is only known once a hold succeeds —
+    // and after a fallback it is not the carrier the gate first chose. Captured off the
+    // event stream so the orchestrator stays unaware of any of this.
+    let heldCarrier = '';
+    const emit: Emit = (event) => {
+      if (event.type === 'held') heldCarrier = event.carrier;
+      broadcast(event);
+    };
+
+    // The message is the only input. Everything downstream — including which cabin gets
+    // searched, and therefore whether the policy gate blocks — comes from what the
+    // traveller actually said. Nothing in it can alter the policy it is judged by: the
+    // parse yields a TripIntent and the rules come from policy.json, server-side.
+    const instruction = request.text;
     emit({ type: 'instructed', text: instruction });
     const intent = await intentParser.parse(instruction);
     emit({ type: 'understood', intent });
+
+    // Acknowledge before searching. The traveller has just messaged a number and would
+    // otherwise hear nothing for twenty seconds — and restating the interpretation is how
+    // they catch a misread before it costs anything. It asks for nothing: looking is free.
+    const ack = composeAck(intent, { org: policy.org });
+    await replyTo(request).reply(request.threadId, ack);
+    emit({ type: 'acknowledged', text: ack });
 
     const duffel = instrumentDuffel(
       createDuffelClient({ baseUrl: config.duffelBaseUrl, apiKey: config.duffelApiKey }),
@@ -89,28 +144,30 @@ async function runBooking(body: BookBody): Promise<void> {
       merchantCountry: 'AU',
     });
 
-    const prava = instrumentPrava(
-      {
-        ...realPrava,
-        async createSession(req) {
-          const session = await realPrava.createSession(req);
-          // Opening the checkout is the passkey step. When a browser is watching it
-          // opens the checkout itself, as a positioned popup, so the handoff reads as
-          // a payment modal over the agent rather than a tab switch away from it.
-          // Only when nothing is watching (CLI rehearsal) does the server open a tab —
-          // otherwise the checkout would open twice, and a second window holding the
-          // same session is exactly the tab collision that has broken runs before.
-          if (clients.size === 0) {
-            spawn('cmd', ['/c', 'start', 'chrome', session.iframeUrl], { stdio: 'ignore', detached: true }).unref();
-          }
-          return session;
-        },
-      },
-      emit,
-    );
+    // How the approval reaches the human.
+    //
+    // For a request that arrived from a real channel, the link goes back into the same
+    // thread: the traveller is holding the device the passkey is bound to, and they never
+    // leave Messages. Verified on an iPhone — the checkout renders, the enrolled card is
+    // pre-selected, and Face ID satisfies the WebAuthn step in one tap.
+    //
+    // For a rehearsal on the demo channel there is no phone, so the checkout opens locally
+    // instead. Never both: a second window holding the same session is the tab collision
+    // that has broken runs before.
+    const deliverApproval = async (url: string, amount: string, currency: string): Promise<string | null> => {
+      if (request.channel === 'demo') {
+        spawn('cmd', ['/c', 'start', 'chrome', url], { stdio: 'ignore', detached: true }).unref();
+        return null;
+      }
+      const selected = { carrier: { name: heldCarrier || 'Your airline' }, totalAmount: amount, currency };
+      await replyTo(request).reply(request.threadId, composeApproval(selected, url));
+      return request.from;
+    };
+
+    const prava = instrumentPrava(realPrava, emit, deliverApproval);
 
     const merchant = instrumentMerchant(
-      applyTamper(createSimulatedMerchant({ merchantName: 'TravelGuard24' }), body.tamper ?? 'none'),
+      applyTamper(createSimulatedMerchant({ merchantName: 'TravelGuard24' }), tamper),
       emit,
     );
     const audit = instrumentAudit(createHashChainAudit(clock), emit);
@@ -136,7 +193,7 @@ async function runBooking(body: BookBody): Promise<void> {
         policy,
         userId: 'test_user_002',
         userEmail: 'traveler@travelguard24-demo.vercel.app',
-        cardId: '',
+        cardId: config.pravaCardId,
       },
       { duffel, prava, merchant, audit, clock, evaluate: instrumentEvaluate(evaluate, emit) },
     );
@@ -146,6 +203,12 @@ async function runBooking(body: BookBody): Promise<void> {
     if (outcome.status === 'CONFIRMED') {
       broadcast({ type: 'ticketed', pnr: outcome.pnr, eTicketNumber: outcome.eTicketNumber });
     }
+
+    // Close the loop in the traveller's own thread. Every terminating outcome gets a
+    // reply, including the refusals — silence after "book me a flight" leaves someone
+    // not knowing whether they have a seat or whether they have been charged.
+    await notify(request, composeReply(outcome, { org: policy.org }));
+
     broadcast({ type: 'finished', status: outcome.status, detail: outcome });
   } catch (err) {
     broadcast({ type: 'finished', status: 'ERROR', detail: err instanceof Error ? err.message : String(err) });
@@ -154,30 +217,72 @@ async function runBooking(body: BookBody): Promise<void> {
   }
 }
 
+/**
+ * Sends the outcome back, and shows on screen what was sent.
+ *
+ * A failure to notify must never fail the booking — the money has already moved, or
+ * deliberately not moved, and neither is undone by a message not sending.
+ */
+async function notify(request: InboundRequest, text: string): Promise<void> {
+  const target = replyTo(request);
+  try {
+    await target.reply(request.threadId, text);
+    broadcast({ type: 'replied', channel: target.kind, to: request.from, text, delivered: true });
+  } catch (err) {
+    broadcast({
+      type: 'replied',
+      channel: target.kind,
+      to: request.from,
+      text,
+      delivered: false,
+      error: err instanceof Error ? err.message : String(err),
+    });
+  }
+}
+
+/**
+ * Watches the channel.
+ *
+ * Polled, so nothing connects inward and this still runs on localhost with no tunnel.
+ * A poll failure is logged and retried rather than thrown — a transient vendor error
+ * must not silently stop the agent watching.
+ */
+async function watch(): Promise<void> {
+  for (;;) {
+    for (const source of watched) {
+      try {
+        for (const request of await source.poll()) {
+          // One at a time. A second request arriving mid-booking is dropped rather than
+          // queued: it would otherwise surface minutes later against a screen showing
+          // someone else's booking.
+          if (running) continue;
+          broadcast({ type: 'arrived', request });
+          // Proceeds on its own. Searching and gating spend nothing, so there is nothing
+          // to ask permission for yet — the only approval is the passkey, and that is
+          // requested later, in the traveller's own thread, once there is an amount.
+          void runBooking(request, tamperMode);
+        }
+      } catch (err) {
+        // Per source, so one vendor failing does not stop the others being watched.
+        console.error(`${source.kind} poll failed:`, err instanceof Error ? err.message : err);
+      }
+    }
+    await new Promise((r) => setTimeout(r, POLL_MS));
+  }
+}
+
 createServer((req, res) => {
   const url = new URL(req.url ?? '/', `http://localhost:${PORT}`);
 
   if (url.pathname === '/') {
-    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-    res.end(readFileSync(fileURLToPath(new URL('public/index.html', ROOT))));
-    return;
-  }
-
-  // Parses an instruction and returns what the agent understood — and does nothing else.
-  // No search, no vendor, no booking. It exists so the human confirms the agent's
-  // INTERPRETATION rather than their own typing, which is the only version of a confirm
-  // step that carries any information.
-  if (url.pathname === '/understand' && req.method === 'POST') {
-    let raw = '';
-    req.on('data', (c) => (raw += c));
-    req.on('end', () => {
-      void (async () => {
-        const { instruction } = (raw ? JSON.parse(raw) : {}) as { instruction?: string };
-        const intent = await intentParser.parse(instruction?.trim() || '');
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify(intent));
-      })();
+    // no-store, because the page is read from disk on every request and is edited
+    // constantly. A cached copy produces the worst possible symptom: a screen that looks
+    // current, silently missing the change you just made — and on a bad day, filmed.
+    res.writeHead(200, {
+      'Content-Type': 'text/html; charset=utf-8',
+      'Cache-Control': 'no-store, must-revalidate',
     });
+    res.end(readFileSync(fileURLToPath(new URL('public/index.html', ROOT))));
     return;
   }
 
@@ -199,14 +304,39 @@ createServer((req, res) => {
     return;
   }
 
-  if (url.pathname === '/book' && req.method === 'POST') {
+  // Who the agent is watching. The screen says so, because an agent that watches a
+  // channel is a different product from a form that waits to be filled in.
+  if (url.pathname === '/channel') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ kind: channel.kind, address: channel.address }));
+    return;
+  }
+
+  // Rehearsal affordance: injects a message as though a traveller had sent it. Only
+  // reaches the demo channel — it cannot fabricate an inbound iMessage, so what is on
+  // screen during a real run always corresponds to a message that genuinely arrived.
+  if (url.pathname === '/simulate' && req.method === 'POST') {
     let raw = '';
     req.on('data', (c) => (raw += c));
     req.on('end', () => {
-      const body = (raw ? JSON.parse(raw) : {}) as BookBody;
-      void runBooking(body);
+      const { text } = (raw ? JSON.parse(raw) : {}) as { text?: string };
+      demoChannel.inject(text?.trim() || 'Book me SYD to LHR return, 15-25 Sept, economy');
       res.writeHead(202, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ started: true }));
+      res.end(JSON.stringify({ injected: true }));
+    });
+    return;
+  }
+
+  // Arms the demo affordance for the next run. A request now arrives from a phone and
+  // starts on its own, so this can no longer ride along with a confirmation.
+  if (url.pathname === '/tamper' && req.method === 'POST') {
+    let raw = '';
+    req.on('data', (c) => (raw += c));
+    req.on('end', () => {
+      const { mode } = (raw ? JSON.parse(raw) : {}) as { mode?: TamperMode };
+      tamperMode = mode ?? 'none';
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ tamper: tamperMode }));
     });
     return;
   }
@@ -215,5 +345,8 @@ createServer((req, res) => {
   res.end('not found');
 }).listen(PORT, () => {
   console.log(`TravelGuard24 demo  ->  http://localhost:${PORT}`);
-  console.log(`policy: ${policy.org} · cap ${(policy.budgetCapMinor / 100).toFixed(2)} ${policy.currency}`);
+  console.log(`policy:  ${policy.org} · cap ${(policy.budgetCapMinor / 100).toFixed(2)} ${policy.currency}`);
+  console.log(`channel: ${channel.kind} (${channel.address})`);
+  if (wantsIMessage && !linqKey) console.warn('CHANNEL=imessage but LINQ_API_KEY is missing — using the demo channel');
+  void watch();
 });

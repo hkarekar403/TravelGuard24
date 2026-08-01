@@ -8,6 +8,7 @@
 
 import type { Evaluate, PolicyDecision } from '../policy/types.js';
 import type { TripIntent } from '../agent/intent.js';
+import type { ChannelKind, InboundRequest } from '../channel/types.js';
 import type {
   AuditEventType,
   DuffelPort,
@@ -19,6 +20,15 @@ import type {
 } from '../orchestrator/ports.js';
 
 export type UiEvent =
+  | { type: 'arrived'; request: InboundRequest }
+  | {
+      type: 'replied';
+      channel: ChannelKind;
+      to: string;
+      text: string;
+      delivered: boolean;
+      error?: string;
+    }
   | { type: 'instructed'; text: string }
   | { type: 'understood'; intent: TripIntent }
   | { type: 'searching'; query: SearchRequest }
@@ -27,7 +37,16 @@ export type UiEvent =
   | { type: 'holding'; carrier: string; amount: string; currency: string }
   | { type: 'held'; pnr: string; carrier: string; amount: string; currency: string }
   | { type: 'hold_refused'; carrier: string; reason: string }
-  | { type: 'awaiting_passkey'; amount: string; currency: string; iframeUrl: string; expiresAt: string }
+  | { type: 'acknowledged'; text: string }
+  | {
+      type: 'awaiting_passkey';
+      amount: string;
+      currency: string;
+      iframeUrl: string;
+      expiresAt: string;
+      /** Where the approval link was sent, or null when it opened locally for rehearsal. */
+      sentTo: string | null;
+    }
   | { type: 'redeemed'; redemption: RedemptionResult }
   | { type: 'reported'; status: 'APPROVED' | 'DECLINED'; confirmed: boolean; visaConfirmation: string }
   | { type: 'settling' }
@@ -124,17 +143,29 @@ export function instrumentEvaluate(inner: Evaluate, emit: Emit): Evaluate {
   };
 }
 
-/** Wraps Prava so the passkey step becomes a screen state rather than a silent wait. */
-export function instrumentPrava(inner: PravaPort, emit: Emit): PravaPort {
+/**
+ * Wraps Prava so the passkey step becomes a screen state rather than a silent wait.
+ *
+ * `deliver` is how the approval reaches the human. It returns where the link was sent, or
+ * null if it was opened locally — the screen has to say which, because "waiting for a
+ * passkey" means something different when the human is holding the phone it went to.
+ */
+export function instrumentPrava(
+  inner: PravaPort,
+  emit: Emit,
+  deliver: (url: string, amount: string, currency: string) => Promise<string | null>,
+): PravaPort {
   return {
     async createSession(req) {
       const session = await inner.createSession(req);
+      const sentTo = await deliver(session.iframeUrl, req.totalAmount, req.currency);
       emit({
         type: 'awaiting_passkey',
         amount: req.totalAmount,
         currency: req.currency,
         iframeUrl: session.iframeUrl,
         expiresAt: session.expiresAt,
+        sentTo,
       });
       return session;
     },

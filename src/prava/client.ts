@@ -65,14 +65,20 @@ export function createPravaClient(opts: PravaClientOptions): PravaPort {
         user_id: req.userId,
         // Card pre-selection is OPT-IN and off by default.
         //
-        // Sending `card: { card_id }` returns 201 and looks correct from the API, but the
-        // hosted checkout then renders the order summary and never offers a card or a
-        // passkey — no button, no progression, session stuck at `pending` with an empty
-        // transactions array. Verified live on 1 Aug against a session that was otherwise
-        // identical to four that completed fine without it.
+        // An earlier note here said this BREAKS the checkout — a session sent with
+        // `card: { card_id }` stalled on the order summary with no card and no passkey.
+        // That diagnosis was wrong and is corrected here: a control session sent WITHOUT
+        // the card object stalled on the same summary and then failed its security check,
+        // so the summary screen is normal and the real fault was elsewhere. The pre-select
+        // has never actually been shown to misbehave.
         //
-        // The API-level 201 is what makes this dangerous: it validates, so nothing warns
-        // you until a human opens the page.
+        // It is still off by default only because every completed transaction so far was
+        // made without it, i.e. it matches a known-good configuration — not because it is
+        // suspect. It becomes worth turning on when a customer has more than one enrolled
+        // card, since the checkout otherwise offers the default first.
+        //
+        // The real lesson from that episode stands: a 201 here says nothing about whether
+        // a human can complete the checkout. Verify payment changes in a browser.
         ...(req.cardId ? { card: { card_id: req.cardId } } : {}),
         purchase_context: [
           {
