@@ -316,7 +316,10 @@ createServer((req, res) => {
 
   if (url.pathname === '/policy') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify(policy));
+    // Provenance rides along so the screen can say where the rules came from. It is a
+    // report of what startup already resolved, not a live check — the column states the
+    // source, and the Senso knowledge base is what evidences it.
+    res.end(JSON.stringify({ ...policy, provenance: policyProvenance }));
     return;
   }
 

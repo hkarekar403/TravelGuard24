@@ -21,6 +21,8 @@
   .rule{padding:10px 0;border-bottom:1px solid var(--line)}
   .rule .k{font-size:11.5px;color:var(--dim)}
   .rule .v{font-size:13.5px;margin-top:1px}
+  .src{margin-top:13px;font-family:var(--mono);font-size:10.5px;color:var(--dim);line-height:1.55;word-break:break-word}
+  .src b{color:var(--ink);font-weight:500}
   .scope{margin-top:16px;padding:9px 10px;border:1px dashed var(--line);border-radius:6px;font-size:11px;color:var(--dim);line-height:1.45}
 
   /* ── B ── */
@@ -118,6 +120,7 @@
     <h2>Travel Policy</h2>
     <div class="sub" id="org">—</div>
     <div id="rules"></div>
+    <div id="source" class="src"></div>
     <div class="scope">No exception/override path in v1<br><span style="opacity:.65">declared out of scope</span></div>
   </div>
 
@@ -190,6 +193,18 @@ fetch('/policy').then(r=>r.json()).then(p=>{
     ['Advance purchase', '≥ '+p.minAdvanceDays+' days before departure'],
     ['Vendor allowlist', p.vendorAllowlist.length+' approved carriers'],
   ].map(([k,v])=>`<div class="rule"><div class="k">${k}</div><div class="v">${v}</div></div>`).join('');
+
+  // Where the rules came from. Rendered on BOTH paths deliberately: a line that only
+  // appears when retrieval succeeded would be advertising, and would vanish on camera at
+  // the exact moment the fallback mattered most. `policy.json` is a legitimate source.
+  const pv = p.provenance;
+  if (pv) {
+    const cited = pv.citations && pv.citations.length ? pv.citations[0] : null;
+    $('#source').innerHTML = pv.source === 'senso'
+      ? `source <b>${esc(cited || 'verified document')}</b> <span style="color:var(--ok)">✓ verified</span>
+         ${pv.tightened && pv.tightened.length ? `<br><span style="color:var(--warn)">tightened: ${esc(pv.tightened.join(', '))}</span>` : ''}`
+      : `source <b>policy.json</b> <span style="opacity:.7">— committed baseline (${esc(pv.reason)})</span>`;
+  }
 });
 
 document.querySelectorAll('[data-say]').forEach(b=>b.onclick=()=>{ $('#q').value=b.dataset.say; });
