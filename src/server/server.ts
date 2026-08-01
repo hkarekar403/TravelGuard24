@@ -73,6 +73,21 @@ const linqKey = process.env['LINQ_API_KEY'] ?? env['LINQ_API_KEY'] ?? '';
 const channel: InboundChannel =
   wantsIMessage && linqKey ? createLinqChannel({ apiKey: linqKey }) : demoChannel;
 
+/**
+ * Every channel being watched.
+ *
+ * The demo channel is always among them, even when a real one is active: rehearsing a
+ * screen state should not require sending a real message to a real handset, and the
+ * blocked path in particular gets re-run repeatedly while its layout is being settled.
+ * An injected request is still labelled `demo` on screen, so it can never be mistaken for
+ * something that actually arrived.
+ */
+const watched: InboundChannel[] = channel === demoChannel ? [demoChannel] : [demoChannel, channel];
+
+/** Replies go back to the channel the request came in on, not to the active one. */
+const replyTo = (request: InboundRequest): InboundChannel =>
+  request.channel === 'demo' ? demoChannel : channel;
+
 const POLL_MS = 1_500;
 
 /**
@@ -190,13 +205,14 @@ async function runBooking(request: InboundRequest, tamper: TamperMode): Promise<
  * deliberately not moved, and neither is undone by a message not sending.
  */
 async function notify(request: InboundRequest, text: string): Promise<void> {
+  const target = replyTo(request);
   try {
-    await channel.reply(request.threadId, text);
-    broadcast({ type: 'replied', channel: channel.kind, to: request.from, text, delivered: true });
+    await target.reply(request.threadId, text);
+    broadcast({ type: 'replied', channel: target.kind, to: request.from, text, delivered: true });
   } catch (err) {
     broadcast({
       type: 'replied',
-      channel: channel.kind,
+      channel: target.kind,
       to: request.from,
       text,
       delivered: false,
@@ -214,17 +230,20 @@ async function notify(request: InboundRequest, text: string): Promise<void> {
  */
 async function watch(): Promise<void> {
   for (;;) {
-    try {
-      for (const request of await channel.poll()) {
-        // One at a time. A second request arriving mid-booking is dropped rather than
-        // queued: it would otherwise surface minutes later against a screen showing
-        // someone else's booking.
-        if (running) continue;
-        awaiting.set(request.id, request);
-        broadcast({ type: 'arrived', request });
+    for (const source of watched) {
+      try {
+        for (const request of await source.poll()) {
+          // One at a time. A second request arriving mid-booking is dropped rather than
+          // queued: it would otherwise surface minutes later against a screen showing
+          // someone else's booking.
+          if (running) continue;
+          awaiting.set(request.id, request);
+          broadcast({ type: 'arrived', request });
+        }
+      } catch (err) {
+        // Per source, so one vendor failing does not stop the others being watched.
+        console.error(`${source.kind} poll failed:`, err instanceof Error ? err.message : err);
       }
-    } catch (err) {
-      console.error('channel poll failed:', err instanceof Error ? err.message : err);
     }
     await new Promise((r) => setTimeout(r, POLL_MS));
   }
