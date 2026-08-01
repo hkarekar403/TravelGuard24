@@ -425,13 +425,15 @@ new EventSource('/events').onmessage = (m) => {
       });
     } else {
       const nm=d.nearestMiss, ch=d.cheapestOverall;
+      // The funnel line above already says 406 -> 0. Stating "0 of 406 cleared" and then
+      // "406 offers evaluated. None compliant." says the same count a second and third
+      // time, and on the one screen that must not scroll.
       verdict.innerHTML =
         `<div class="verdict"><span class="tag no">Refused to spend</span>
-           <span class="lede">0 of ${d.totalOffers} offers cleared all 4 rules</span></div>
-         <div class="lede">nearest miss — ${nm?.carrier.name??'—'}</div>
+           <span class="lede">nearest miss — ${nm?.carrier.name??'—'}</span></div>
          <div class="price" style="margin:1px 0 8px;color:var(--warn)">${nm?.totalAmount??'—'} <span class="meta" style="font-size:13px">${nm?.currency??''}</span></div>
          <table class="checks">${nm?ruleRows(nm.rules.filter(r=>!r.passed)):''}</table>
-         <div class="why">${d.totalOffers} offers evaluated. None compliant.${ch&&ch.offerId!==nm?.offerId?`<br>Cheapest available ${ch.totalAmount} ${ch.currency} — ${ch.failedRules.length} rules short.`:''}</div>
+         ${ch&&ch.offerId!==nm?.offerId?`<div class="why">Cheapest available ${ch.totalAmount} ${ch.currency} — ${ch.failedRules.length} rules short.</div>`:''}
          <div class="banner"><b>No payment session was created.</b> The agent did not fail to pay — it declined to.</div>`;
       revealFunnel(document.getElementById('fn'), d.totalOffers, d.funnel, ()=>{
         verdict.style.opacity='1';
@@ -586,10 +588,13 @@ new EventSource('/events').onmessage = (m) => {
      traveller is told which rule stopped it and that nothing was charged. */
   if(e.type==='replied'){
     TITLES.told = 'Replied to traveller';
+    // Bounded height: the message is on the traveller's phone, which is the surface it
+    // was written for. On screen it is evidence that the loop closed, and it must not
+    // push the decision above it off the top.
     body('told').innerHTML =
       `<div class="meta" style="margin-bottom:6px">${CH_LABEL[e.channel]||e.channel} → ${esc(e.to)}${
          e.delivered?'':' <span class="fail">— not delivered</span>'}</div>
-       <div class="bub agent" style="white-space:pre-wrap;margin:0">${esc(e.text)}</div>
+       <div class="bub agent" style="white-space:pre-wrap;margin:0;font-size:12.5px;max-height:140px;overflow-y:auto">${esc(e.text)}</div>
        ${e.error?`<div class="why fail">${esc(e.error).slice(0,120)}</div>`:''}`;
     close('told', undefined, e.delivered?'done':'stop');
   }
