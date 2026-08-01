@@ -253,7 +253,13 @@ createServer((req, res) => {
   const url = new URL(req.url ?? '/', `http://localhost:${PORT}`);
 
   if (url.pathname === '/') {
-    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    // no-store, because the page is read from disk on every request and is edited
+    // constantly. A cached copy produces the worst possible symptom: a screen that looks
+    // current, silently missing the change you just made — and on a bad day, filmed.
+    res.writeHead(200, {
+      'Content-Type': 'text/html; charset=utf-8',
+      'Cache-Control': 'no-store, must-revalidate',
+    });
     res.end(readFileSync(fileURLToPath(new URL('public/index.html', ROOT))));
     return;
   }
