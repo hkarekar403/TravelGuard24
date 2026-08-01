@@ -21,6 +21,7 @@ import { bookTrip } from '../orchestrator/orchestrator.js';
 import { evaluate } from '../policy/engine.js';
 import type { Policy } from '../policy/types.js';
 import type { Clock } from '../orchestrator/ports.js';
+import { createMockIntentParser } from '../agent/intent.js';
 import {
   applyTamper,
   instrumentAudit,
@@ -48,8 +49,11 @@ function broadcast(event: UiEvent): void {
   for (const c of clients) c.write(frame);
 }
 
+const intentParser = createMockIntentParser();
+
 type BookBody = {
-  cabinClass?: string;
+  /** Plain-English instruction. The agent parses it; cabin is not chosen by a control. */
+  instruction?: string;
   /** Demo affordance: deliberately corrupt the redemption so the guardrail visibly bites. */
   tamper?: TamperMode;
 };
@@ -60,6 +64,14 @@ async function runBooking(body: BookBody): Promise<void> {
   try {
     const config = loadConfig();
     const emit = broadcast;
+
+    // The instruction is the only input. Everything downstream — including which cabin
+    // gets searched, and therefore whether the policy gate blocks — comes from what the
+    // traveller actually said.
+    const instruction = body.instruction?.trim() || 'Book me SYD to LHR return, 15-25 Sept';
+    emit({ type: 'instructed', text: instruction });
+    const intent = await intentParser.parse(instruction);
+    emit({ type: 'understood', intent });
 
     const duffel = instrumentDuffel(
       createDuffelClient({ baseUrl: config.duffelBaseUrl, apiKey: config.duffelApiKey }),
@@ -96,11 +108,11 @@ async function runBooking(body: BookBody): Promise<void> {
     const outcome = await bookTrip(
       {
         search: {
-          origin: 'SYD',
-          destination: 'LHR',
-          departureDate: '2026-09-15',
-          returnDate: '2026-09-25',
-          cabinClass: body.cabinClass ?? 'economy',
+          origin: intent.origin,
+          destination: intent.destination,
+          departureDate: intent.departureDate,
+          returnDate: intent.returnDate,
+          cabinClass: intent.cabinClass,
         },
         passenger: {
           title: 'mr',

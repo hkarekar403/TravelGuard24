@@ -56,6 +56,7 @@
   table.checks td.lbl{color:var(--dim);width:158px}
   .pass{color:var(--ok)} .fail{color:var(--no)}
   .chk{animation:in .3s ease}
+  .said{font-size:15px;line-height:1.5;color:var(--ink)}
   .why{font-size:11.5px;color:var(--dim);margin-top:9px;font-family:var(--mono)}
   .banner{margin-top:11px;padding:10px 12px;border-radius:7px;background:#1b1405;border:1px solid #3d2f08;font-size:12.5px}
   .banner b{color:var(--warn)}
@@ -87,14 +88,17 @@
     <h2>Agent</h2>
     <div class="sub">Searches, checks policy, and only then requests payment.</div>
     <div class="prompt">
-      <input type="text" id="q" value="Book me SYD → LHR return, 15–25 Sept" />
-      <button id="go">Book</button>
+      <input type="text" id="q" value="Book me SYD to LHR return, 15-25 Sept, economy" />
+      <button id="go">Send</button>
     </div>
     <div class="opts">
-      Scenario:
-      <button class="ghost on" data-cabin="economy">economy</button>
-      <button class="ghost" data-cabin="business">business</button>
-      <span style="opacity:.4">|</span> Tamper:
+      Try:
+      <button class="ghost ex" data-say="Book me SYD to LHR return, 15-25 Sept, economy">economy trip</button>
+      <button class="ghost ex" data-say="Book me business class SYD to LHR, 15-25 Sept - it's a long flight">business class</button>
+      <button class="ghost ex" data-say="Need to get to London from Sydney, 15-25 Sept, under $1,200">vague + budget</button>
+    </div>
+    <div class="opts" style="margin-top:-4px">
+      <span style="opacity:.55">demo control ·</span> tamper the credential:
       <button class="ghost on" data-tamper="none">off</button>
       <button class="ghost" data-tamper="amount">amount</button>
       <button class="ghost" data-tamper="merchant">merchant</button>
@@ -114,7 +118,7 @@
 <script>
 const $ = (s) => document.querySelector(s);
 const flow = $('#flow'), log = $('#log');
-let cabin = 'economy', tamper = 'none', entries = 0, n = 0;
+let tamper = 'none', entries = 0, n = 0;
 const money = (m,c) => (m/100).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,',') + ' ' + c;
 
 fetch('/policy').then(r=>r.json()).then(p=>{
@@ -127,8 +131,7 @@ fetch('/policy').then(r=>r.json()).then(p=>{
   ].map(([k,v])=>`<div class="rule"><div class="k">${k}</div><div class="v">${v}</div></div>`).join('');
 });
 
-document.querySelectorAll('[data-cabin]').forEach(b=>b.onclick=()=>{cabin=b.dataset.cabin;
-  document.querySelectorAll('[data-cabin]').forEach(x=>x.classList.toggle('on',x===b));});
+document.querySelectorAll('[data-say]').forEach(b=>b.onclick=()=>{ $('#q').value=b.dataset.say; });
 document.querySelectorAll('[data-tamper]').forEach(b=>b.onclick=()=>{tamper=b.dataset.tamper;
   document.querySelectorAll('[data-tamper]').forEach(x=>x.classList.toggle('on',x===b));});
 
@@ -136,14 +139,15 @@ $('#go').onclick = () => {
   flow.innerHTML=''; log.innerHTML='<div class="empty">No entries yet.</div>';
   entries=0; n=0; $('#go').disabled=true;
   fetch('/book',{method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({cabinClass:cabin,tamper})});
+    body:JSON.stringify({instruction:$('#q').value,tamper})});
 };
 
 /* Steps accumulate. Finished ones collapse to a one-line summary so the whole
    journey stays on screen without scrolling — the rules, the decision and the
    evidence have to be visible together, that simultaneity is the point. */
-const TITLES={search:'Discovery',gate:'Policy gate',hold:'Reservation',auth:'Authorisation',
-              guard:'Mandate enforcement',settle:'Settlement',done:'Confirmed'};
+const TITLES={ask:'Request',read:'Understanding',search:'Discovery',gate:'Policy gate',
+              hold:'Reservation',auth:'Authorisation',guard:'Mandate enforcement',
+              settle:'Settlement',done:'Confirmed'};
 
 function step(id){
   let el = document.getElementById('s-'+id);
@@ -191,6 +195,25 @@ function addAudit(e){
 
 new EventSource('/events').onmessage = (m) => {
   const e = JSON.parse(m.data);
+
+  if(e.type==='instructed'){
+    body('ask').innerHTML = `<div class="said">“${e.text}”</div>`;
+    close('ask', undefined);
+  }
+
+  if(e.type==='understood'){
+    const i=e.intent;
+    const cab = i.cabinClass.replace('_',' ');
+    body('read').innerHTML =
+      `<table class="checks">
+         <tr><td></td><td class="lbl">route</td><td><b>${i.origin} → ${i.destination}</b> return</td></tr>
+         <tr><td></td><td class="lbl">dates</td><td>${i.departureDate} → ${i.returnDate}</td></tr>
+         <tr><td></td><td class="lbl">cabin</td><td><b>${cab}</b></td></tr>
+         ${i.statedBudget?`<tr><td></td><td class="lbl">traveller's budget</td><td>${i.statedBudget} <span class="meta">— a preference, not the policy</span></td></tr>`:''}
+       </table>
+       ${i.assumptions.length?`<div class="why">Assumed: ${i.assumptions.join(' · ')}</div>`:''}`;
+    close('read', `${i.origin}→${i.destination} · ${cab}`);
+  }
 
   if(e.type==='searching') body('search').innerHTML = `<div class="tick">Querying Duffel<b> …</b></div>`;
 
