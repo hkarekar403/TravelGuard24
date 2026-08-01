@@ -588,13 +588,19 @@ new EventSource('/events').onmessage = (m) => {
      traveller is told which rule stopped it and that nothing was charged. */
   if(e.type==='replied'){
     TITLES.told = 'Replied to traveller';
-    // Bounded height: the message is on the traveller's phone, which is the surface it
-    // was written for. On screen it is evidence that the loop closed, and it must not
-    // push the decision above it off the top.
+    // The opening is quoted, not the whole message. It was written for the traveller's
+    // phone, which is the surface it gets read on and is in shot anyway; here it only has
+    // to show the loop closed. Quoting it in full pushed the decision that caused it off
+    // the top of the column, and an inner scrollbar inside an already-scrolling column is
+    // worse than the overflow it was fixing.
+    const lines = e.text.split('\n').filter(Boolean);
+    const shown = lines.slice(0, 2).join('\n');
     body('told').innerHTML =
       `<div class="meta" style="margin-bottom:6px">${CH_LABEL[e.channel]||e.channel} → ${esc(e.to)}${
-         e.delivered?'':' <span class="fail">— not delivered</span>'}</div>
-       <div class="bub agent" style="white-space:pre-wrap;margin:0;font-size:12.5px;max-height:140px;overflow-y:auto">${esc(e.text)}</div>
+         e.delivered?' · delivered':' <span class="fail">— not delivered</span>'}</div>
+       <div class="bub agent" title="${esc(e.text)}"
+            style="white-space:pre-wrap;margin:0;font-size:12.5px">${esc(shown)}${
+         lines.length>2?`<span class="meta">\n…${lines.length-2} more lines, on the traveller's phone</span>`:''}</div>
        ${e.error?`<div class="why fail">${esc(e.error).slice(0,120)}</div>`:''}`;
     close('told', undefined, e.delivered?'done':'stop');
   }
