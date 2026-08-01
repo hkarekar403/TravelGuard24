@@ -29,6 +29,7 @@ export type UiEvent =
   | { type: 'hold_refused'; carrier: string; reason: string }
   | { type: 'awaiting_passkey'; amount: string; currency: string; iframeUrl: string; expiresAt: string }
   | { type: 'redeemed'; redemption: RedemptionResult }
+  | { type: 'reported'; status: 'APPROVED' | 'DECLINED'; confirmed: boolean; visaConfirmation: string }
   | { type: 'settling' }
   | { type: 'ticketed'; pnr: string; eTicketNumber: string | null }
   | { type: 'audit'; seq: number; at: string; event: AuditEventType; hash: string; prevHash: string }
@@ -138,7 +139,19 @@ export function instrumentPrava(inner: PravaPort, emit: Emit): PravaPort {
       return session;
     },
     getPaymentResult: (id) => inner.getPaymentResult(id),
-    reportStatus: (id, cred, status) => inner.reportStatus(id, cred, status),
+    // What we told the network, and what it said back. The confirmed screen used to
+    // assert `visa_confirmation SUCCESS` in markup; on a screen whose whole claim is
+    // evidence rather than assertion, that value has to come from the response.
+    async reportStatus(id, cred, status) {
+      const report = await inner.reportStatus(id, cred, status);
+      emit({
+        type: 'reported',
+        status,
+        confirmed: report.confirmed,
+        visaConfirmation: report.visaConfirmation,
+      });
+      return report;
+    },
   };
 }
 

@@ -164,7 +164,7 @@
 const $ = (s) => document.querySelector(s);
 const flow = $('#flow'), log = $('#log');
 let tamper = 'none', entries = 0, n = 0;
-let ticker = null, refusals = 0, checkout = null;
+let ticker = null, refusals = 0, checkout = null, confirmation = '';
 const money = (m,c) => (m/100).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,',') + ' ' + c;
 const esc = (s) => String(s).replace(/[<&]/g, (c) => (c==='<'?'&lt;':'&amp;'));
 
@@ -219,7 +219,7 @@ $('#confirm').onclick = () => {
   $('#scrim').hidden=true;
   $('#idle').style.display='none';
   flow.innerHTML=''; log.innerHTML='<div class="empty">No entries yet.</div>';
-  entries=0; n=0; refusals=0;
+  entries=0; n=0; refusals=0; confirmation='';
   clearInterval(ticker); ticker=null;
   // A demo affordance that is only a button state is one a viewer can miss. While it is
   // armed it stays declared on screen for the whole run — the rejection has to be
@@ -484,12 +484,24 @@ new EventSource('/events').onmessage = (m) => {
          <td>${c.observed}${c.passed?'':` <span class="fail">— expected ${c.expected}</span>`}</td></tr>`);
       if(i===e.redemption.checks.length-1){
         if(!e.redemption.accepted){
-          el.insertAdjacentHTML('beforeend','<div class="banner"><b>Rejected.</b> Credential refused — the airline is never paid.</div>');
+          el.insertAdjacentHTML('beforeend',
+            `<div class="banner" id="rj"><b>Rejected.</b> Credential refused. The airline is never
+               paid and the reservation expires unpaid.</div>`);
           close('guard', undefined,'stop');
           document.querySelector('#s-guard .hd .sum').textContent='REJECTED';
         } else close('guard','3 checks passed');
       }
     }, 420*i));
+  }
+
+  /* Reporting the outcome to the network happens on BOTH paths. A rejection is not a
+     silent local refusal — the mandate is closed as DECLINED rather than left with live
+     credentials outstanding, and that is worth seeing. */
+  if(e.type==='reported'){
+    confirmation = e.visaConfirmation;
+    if(e.status==='DECLINED')
+      document.getElementById('rj')?.insertAdjacentHTML('beforeend',
+        ` <span class="meta">Reported to the network as DECLINED — mandate closed, credentials not left outstanding.</span>`);
   }
 
   if(e.type==='settling') body('settle').innerHTML = `<div class="tick">Paying airline via Duffel balance<b> …</b></div>`;
@@ -500,7 +512,7 @@ new EventSource('/events').onmessage = (m) => {
       `<table class="checks hero">
          <tr><td class="pass">✓</td><td class="lbl">PNR</td><td><b>${e.pnr}</b></td></tr>
          <tr><td class="pass">✓</td><td class="lbl">E-ticket</td><td>issued${e.eTicketNumber?` <span class="meta">(${e.eTicketNumber})</span>`:''}</td></tr>
-         <tr><td class="pass">✓</td><td class="lbl">Mandate</td><td>closed · visa_confirmation SUCCESS</td></tr>
+         <tr><td class="pass">✓</td><td class="lbl">Mandate</td><td>closed · visa_confirmation ${confirmation||'—'}</td></tr>
          <tr><td class="pass">✓</td><td class="lbl">Audit</td><td><span id="ac">${entries}</span> entries · chain verified</td></tr>
        </table>`;
     close('done', undefined);
