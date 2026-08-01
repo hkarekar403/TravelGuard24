@@ -5,97 +5,104 @@
 <title>TravelGuard24</title>
 <style>
   :root{
-    --bg:#0d1117; --panel:#151b23; --line:#232b36; --ink:#e6edf3; --dim:#8b949e;
-    --ok:#3fb950; --no:#f85149; --hi:#58a6ff; --warn:#d29922;
+    --bg:#0b0f14; --panel:#131a22; --panel2:#0f151c; --line:#1f2833; --ink:#e6edf3; --dim:#7d8896;
+    --ok:#3fb950; --no:#f85149; --hi:#58a6ff; --warn:#e3b341;
     --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
   }
   *{box-sizing:border-box;margin:0;padding:0}
-  body{background:var(--bg);color:var(--ink);font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;height:100vh;overflow:hidden}
-  .grid{display:grid;grid-template-columns:260px 1fr 320px;height:100vh}
-  .col{padding:20px;overflow-y:auto}
+  body{background:var(--bg);color:var(--ink);font:14px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;height:100vh;overflow:hidden}
+  .grid{display:grid;grid-template-columns:250px 1fr 310px;height:100vh}
+  .col{padding:22px 20px;overflow-y:auto}
   .col+.col{border-left:1px solid var(--line)}
-  h2{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin-bottom:4px}
-  .sub{font-size:11px;color:var(--dim);margin-bottom:18px}
+  h2{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+  .sub{font-size:11.5px;color:var(--dim);margin:3px 0 16px}
 
-  /* Column A */
-  .rule{padding:11px 0;border-bottom:1px solid var(--line)}
-  .rule .k{font-size:12px;color:var(--dim)}
-  .rule .v{font-size:14px;margin-top:2px}
-  .scope{margin-top:18px;padding:10px;border:1px dashed var(--line);border-radius:6px;font-size:11px;color:var(--dim)}
+  /* ── A ── */
+  .rule{padding:10px 0;border-bottom:1px solid var(--line)}
+  .rule .k{font-size:11.5px;color:var(--dim)}
+  .rule .v{font-size:13.5px;margin-top:1px}
+  .scope{margin-top:16px;padding:9px 10px;border:1px dashed var(--line);border-radius:6px;font-size:11px;color:var(--dim);line-height:1.45}
 
-  /* Column B */
+  /* ── B ── */
   .mid{display:flex;flex-direction:column;height:100%}
-  .prompt{display:flex;gap:8px;margin-bottom:8px}
-  input[type=text]{flex:1;background:var(--panel);border:1px solid var(--line);color:var(--ink);padding:12px 14px;border-radius:8px;font-size:14px}
-  button{background:var(--hi);border:0;color:#04121f;font-weight:600;padding:12px 18px;border-radius:8px;cursor:pointer;font-size:14px}
-  button.ghost{background:transparent;border:1px solid var(--line);color:var(--dim);font-weight:500;padding:6px 10px;font-size:12px}
+  .prompt{display:flex;gap:8px}
+  input[type=text]{flex:1;background:var(--panel);border:1px solid var(--line);color:var(--ink);padding:11px 13px;border-radius:8px;font-size:13.5px}
+  button{background:var(--hi);border:0;color:#04121f;font-weight:600;padding:11px 20px;border-radius:8px;cursor:pointer;font-size:13.5px}
+  button.ghost{background:transparent;border:1px solid var(--line);color:var(--dim);font-weight:500;padding:4px 9px;font-size:11px;border-radius:5px}
   button.ghost.on{border-color:var(--warn);color:var(--warn)}
-  button:disabled{opacity:.4;cursor:default}
-  .hint{font-size:11px;color:var(--dim);margin-bottom:16px}
-  .stage{flex:1;display:flex;flex-direction:column;gap:14px}
+  button:disabled{opacity:.35;cursor:default}
+  .opts{font-size:11px;color:var(--dim);margin:9px 0 14px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 
-  .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px}
-  .tick{font-family:var(--mono);font-size:12.5px;color:var(--dim);line-height:1.9}
+  .flow{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:7px;padding-right:4px}
+  .step{border:1px solid var(--line);border-radius:9px;background:var(--panel2);animation:in .22s ease}
+  .step.live{background:var(--panel);border-color:#2b3846}
+  @keyframes in{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+  .step .hd{display:flex;align-items:center;gap:9px;padding:9px 13px;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--dim)}
+  .step .hd .n{width:17px;height:17px;border-radius:50%;border:1px solid var(--line);display:grid;place-items:center;font-size:9.5px;letter-spacing:0}
+  .step.done .hd .n{border-color:var(--ok);color:var(--ok)}
+  .step.stop .hd .n{border-color:var(--warn);color:var(--warn)}
+  .step .hd .sum{margin-left:auto;font-family:var(--mono);font-size:11px;text-transform:none;letter-spacing:0;color:var(--dim)}
+  .step .bd{padding:0 13px 13px 39px}
+
+  .tick{font-family:var(--mono);font-size:12px;color:var(--dim);line-height:1.85}
   .tick b{color:var(--ink);font-weight:500}
-  .price{font-size:30px;font-weight:600;letter-spacing:-.02em}
-  .carrier{font-size:16px;margin-bottom:2px}
-  .meta{font-size:12px;color:var(--dim)}
+  .price{font-size:26px;font-weight:600;letter-spacing:-.02em}
+  .carrier{font-size:15px}
+  .meta{font-size:11.5px;color:var(--dim)}
 
-  table.checks{width:100%;font-family:var(--mono);font-size:12.5px;border-collapse:collapse;margin-top:12px}
-  table.checks td{padding:5px 0;vertical-align:top}
-  table.checks td:first-child{width:18px}
-  table.checks td.lbl{color:var(--dim);width:170px}
+  table.checks{width:100%;font-family:var(--mono);font-size:12px;border-collapse:collapse}
+  table.checks td{padding:3.5px 0;vertical-align:top}
+  table.checks td:first-child{width:17px}
+  table.checks td.lbl{color:var(--dim);width:158px}
   .pass{color:var(--ok)} .fail{color:var(--no)}
-  .why{font-size:12px;color:var(--dim);margin-top:12px;font-family:var(--mono)}
-
-  .blocked h3{color:var(--warn);font-size:15px;letter-spacing:.02em;margin-bottom:12px}
-  .banner{margin-top:14px;padding:12px;border-radius:8px;background:#1a1206;border:1px solid #3d2c08;font-size:13px}
+  .chk{animation:in .3s ease}
+  .why{font-size:11.5px;color:var(--dim);margin-top:9px;font-family:var(--mono)}
+  .banner{margin-top:11px;padding:10px 12px;border-radius:7px;background:#1b1405;border:1px solid #3d2f08;font-size:12.5px}
   .banner b{color:var(--warn)}
+  .banner.blue{background:#061524;border-color:#12314d}
+  .banner.blue b{color:var(--hi)}
+  .hero{font-size:12.5px}
+  .hero b{font-family:var(--mono);font-size:14px}
 
-  /* Column C */
-  .entry{padding:9px 0;border-bottom:1px solid var(--line);font-family:var(--mono);font-size:11.5px}
-  .entry .top{display:flex;justify-content:space-between;color:var(--ink)}
-  .entry .lnk{color:var(--dim);margin-top:3px}
+  /* ── C ── */
+  .entry{padding:8px 0;border-bottom:1px solid var(--line);font-family:var(--mono);font-size:11px;animation:in .25s ease}
+  .entry .top{display:flex;justify-content:space-between;gap:8px;color:var(--ink)}
+  .entry .lnk{color:var(--dim);margin-top:2px;font-size:10.5px}
   .entry.block .top{color:var(--warn)}
-  .foot{margin-top:14px;font-size:11px;color:var(--dim)}
-  .empty{color:var(--dim);font-size:12px;font-style:italic}
+  .foot{margin-top:13px;font-size:10.5px;color:var(--dim)}
+  .empty{color:var(--dim);font-size:11.5px;font-style:italic}
 </style>
 </head>
 <body>
 <div class="grid">
 
-  <!-- A ─ policy -->
   <div class="col">
     <h2>Travel Policy</h2>
     <div class="sub" id="org">—</div>
     <div id="rules"></div>
-    <div class="scope">No exception/override path in v1 <span style="opacity:.7">(declared out of scope)</span></div>
+    <div class="scope">No exception/override path in v1<br><span style="opacity:.65">declared out of scope</span></div>
   </div>
 
-  <!-- B ─ agent + decision -->
   <div class="col mid">
     <h2>Agent</h2>
     <div class="sub">Searches, checks policy, and only then requests payment.</div>
-
     <div class="prompt">
       <input type="text" id="q" value="Book me SYD → LHR return, 15–25 Sept" />
       <button id="go">Book</button>
     </div>
-    <div class="hint">
+    <div class="opts">
       Scenario:
       <button class="ghost on" data-cabin="economy">economy</button>
-      <button class="ghost" data-cabin="business">business (blocked)</button>
-      &nbsp;·&nbsp; Tamper:
+      <button class="ghost" data-cabin="business">business</button>
+      <span style="opacity:.4">|</span> Tamper:
       <button class="ghost on" data-tamper="none">off</button>
       <button class="ghost" data-tamper="amount">amount</button>
       <button class="ghost" data-tamper="merchant">merchant</button>
       <button class="ghost" data-tamper="replay">replay</button>
     </div>
-
-    <div class="stage" id="stage"></div>
+    <div class="flow" id="flow"></div>
   </div>
 
-  <!-- C ─ audit -->
   <div class="col">
     <h2>Audit Log</h2>
     <div class="sub">Every attempt, including refusals.</div>
@@ -106,136 +113,161 @@
 
 <script>
 const $ = (s) => document.querySelector(s);
-const stage = $('#stage'), log = $('#log');
-let cabin = 'economy', tamper = 'none', entries = 0;
+const flow = $('#flow'), log = $('#log');
+let cabin = 'economy', tamper = 'none', entries = 0, n = 0;
+const money = (m,c) => (m/100).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,',') + ' ' + c;
 
-const money = (m, c) => (m/100).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',') + ' ' + c;
-
-// ── Column A ────────────────────────────────────────────────────────────────
-fetch('/policy').then(r => r.json()).then(p => {
+fetch('/policy').then(r=>r.json()).then(p=>{
   $('#org').textContent = `${p.org} · ${p.version} · 4 rules active`;
   $('#rules').innerHTML = [
-    ['Budget cap', money(p.budgetCapMinor, p.currency) + ' per booking'],
-    ['Cabin class', p.allowedCabinClasses.join(', ') + ' only'],
-    ['Advance purchase', '≥ ' + p.minAdvanceDays + ' days before departure'],
-    ['Vendor allowlist', p.vendorAllowlist.length + ' approved carriers'],
-  ].map(([k,v]) => `<div class="rule"><div class="k">${k}</div><div class="v">${v}</div></div>`).join('');
+    ['Budget cap', money(p.budgetCapMinor,p.currency)+' per booking'],
+    ['Cabin class', p.allowedCabinClasses.join(', ')+' only'],
+    ['Advance purchase', '≥ '+p.minAdvanceDays+' days before departure'],
+    ['Vendor allowlist', p.vendorAllowlist.length+' approved carriers'],
+  ].map(([k,v])=>`<div class="rule"><div class="k">${k}</div><div class="v">${v}</div></div>`).join('');
 });
 
-// ── scenario / tamper toggles ───────────────────────────────────────────────
-document.querySelectorAll('[data-cabin]').forEach(b => b.onclick = () => {
-  cabin = b.dataset.cabin;
-  document.querySelectorAll('[data-cabin]').forEach(x => x.classList.toggle('on', x === b));
-});
-document.querySelectorAll('[data-tamper]').forEach(b => b.onclick = () => {
-  tamper = b.dataset.tamper;
-  document.querySelectorAll('[data-tamper]').forEach(x => x.classList.toggle('on', x === b));
-});
+document.querySelectorAll('[data-cabin]').forEach(b=>b.onclick=()=>{cabin=b.dataset.cabin;
+  document.querySelectorAll('[data-cabin]').forEach(x=>x.classList.toggle('on',x===b));});
+document.querySelectorAll('[data-tamper]').forEach(b=>b.onclick=()=>{tamper=b.dataset.tamper;
+  document.querySelectorAll('[data-tamper]').forEach(x=>x.classList.toggle('on',x===b));});
 
 $('#go').onclick = () => {
-  stage.innerHTML = ''; log.innerHTML = ''; entries = 0;
-  $('#go').disabled = true;
-  fetch('/book', { method:'POST', headers:{'Content-Type':'application/json'},
-                   body: JSON.stringify({ cabinClass: cabin, tamper }) });
+  flow.innerHTML=''; log.innerHTML='<div class="empty">No entries yet.</div>';
+  entries=0; n=0; $('#go').disabled=true;
+  fetch('/book',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({cabinClass:cabin,tamper})});
 };
 
-// ── rendering ───────────────────────────────────────────────────────────────
-function show(html){ stage.innerHTML = html; }
+/* Steps accumulate. Finished ones collapse to a one-line summary so the whole
+   journey stays on screen without scrolling — the rules, the decision and the
+   evidence have to be visible together, that simultaneity is the point. */
+const TITLES={search:'Discovery',gate:'Policy gate',hold:'Reservation',auth:'Authorisation',
+              guard:'Mandate enforcement',settle:'Settlement',done:'Confirmed'};
 
-function ruleRows(rules){
-  return rules.map(r => `<tr>
-    <td class="${r.passed?'pass':'fail'}">${r.passed?'✓':'✕'}</td>
-    <td class="lbl">${r.rule.replace(/_/g,' ')}</td>
-    <td>${r.observed}${r.passed?'':` <span class="fail">— ${r.detail || r.expected}</span>`}</td>
-  </tr>`).join('');
+function step(id){
+  let el = document.getElementById('s-'+id);
+  if(!el){
+    el = document.createElement('div');
+    el.className='step live'; el.id='s-'+id;
+    el.innerHTML=`<div class="hd"><span class="n">${++n}</span><span>${TITLES[id]||id}</span><span class="sum"></span></div><div class="bd"></div>`;
+    flow.appendChild(el); flow.scrollTop = flow.scrollHeight;
+  }
+  return el;
+}
+const body = (id) => step(id).querySelector('.bd');
+function close(id, summary, kind){
+  const el = document.getElementById('s-'+id); if(!el) return;
+  el.classList.remove('live'); el.classList.add(kind||'done');
+  el.querySelector('.hd .n').textContent = kind==='stop' ? '!' : '✓';
+  if(summary!==undefined){ el.querySelector('.sum').textContent = summary; el.querySelector('.bd').innerHTML=''; }
 }
 
+const ruleRows = (rules) => rules.map(r=>`<tr>
+  <td class="${r.passed?'pass':'fail'}">${r.passed?'✓':'✕'}</td>
+  <td class="lbl">${r.rule.replace(/_/g,' ')}</td>
+  <td>${r.observed}${r.passed?'':` <span class="fail">— ${r.detail||r.expected}</span>`}</td></tr>`).join('');
+
 function addAudit(e){
-  if (entries++ === 0) log.innerHTML = '';
-  const blocked = e.event === 'POLICY_BLOCKED' || e.event === 'REDEMPTION_REJECTED';
-  const t = new Date(e.at).toLocaleTimeString('en-GB');
+  if(entries++===0) log.innerHTML='';
+  const blocked = e.event==='POLICY_BLOCKED'||e.event==='REDEMPTION_REJECTED';
   log.insertAdjacentHTML('afterbegin',
     `<div class="entry ${blocked?'block':''}">
-       <div class="top"><span>#${e.seq} ${e.event}</span><span>${t}</span></div>
-       <div class="lnk">${e.hash.slice(0,8)}… ← prev ${e.prevHash ? e.prevHash.slice(0,8)+'…' : 'genesis'}</div>
+       <div class="top"><span>#${e.seq} ${e.event}</span><span>${new Date(e.at).toLocaleTimeString('en-GB')}</span></div>
+       <div class="lnk">${e.hash.slice(0,8)}… ← prev ${e.prevHash?e.prevHash.slice(0,8)+'…':'genesis'}</div>
      </div>`);
 }
 
-// ── event stream ────────────────────────────────────────────────────────────
 new EventSource('/events').onmessage = (m) => {
   const e = JSON.parse(m.data);
 
-  if (e.type === 'searching') show(`<div class="card tick">Searching Duffel<b> …</b></div>`);
+  if(e.type==='searching') body('search').innerHTML = `<div class="tick">Querying Duffel<b> …</b></div>`;
 
-  if (e.type === 'searched')
-    show(`<div class="card tick">Searching Duffel …………… <b>${e.offers} bookable offers / ${e.carriers} airlines</b><br>Evaluating against 4 rules …<b> …</b></div>`);
+  if(e.type==='searched'){
+    body('search').innerHTML = `<div class="tick"><b>${e.offers}</b> bookable offers · <b>${e.carriers}</b> airlines</div>`;
+    close('search', `${e.offers} offers / ${e.carriers} airlines`);
+  }
 
-  if (e.type === 'decided') {
-    const d = e.decision;
-    const f = d.funnel.map(x => x.remaining).join(' → ');
-    if (d.outcome === 'APPROVED') {
-      const s = d.selected;
-      show(`<div class="card tick">Searching Duffel …………… <b>${d.totalOffers} bookable offers</b><br>Evaluating against 4 rules … <b>${d.totalOffers} → ${f}</b></div>
-        <div class="card">
-          <div class="carrier">${s.carrier.name} <span class="meta">(${s.carrier.iata})</span></div>
-          <div class="meta">SYD → LHR return · 15–25 Sept · economy</div>
-          <div class="price" style="margin-top:10px">${s.totalAmount} <span class="meta" style="font-size:14px">${s.currency}</span></div>
-          <table class="checks">${ruleRows(s.rules)}</table>
-          ${d.runnerUp ? `<div class="why">Chose ${s.carrier.name} at ${s.totalAmount} over ${d.runnerUp.carrier.name} at ${d.runnerUp.totalAmount} — cheapest compliant</div>`:''}
-        </div>`);
+  if(e.type==='decided'){
+    const d=e.decision, f=d.funnel.map(x=>x.remaining);
+    const funnel = `${d.totalOffers} → ${f.join(' → ')}`;
+    if(d.outcome==='APPROVED'){
+      const s=d.selected;
+      body('gate').innerHTML =
+        `<div class="tick" style="margin-bottom:9px">Evaluating 4 rules … <b>${funnel}</b></div>
+         <div class="carrier">${s.carrier.name} <span class="meta">(${s.carrier.iata})</span></div>
+         <div class="price" style="margin:2px 0 8px">${s.totalAmount} <span class="meta" style="font-size:13px">${s.currency}</span></div>
+         <table class="checks">${ruleRows(s.rules)}</table>
+         ${d.runnerUp?`<div class="why">Chose ${s.carrier.name} at ${s.totalAmount} over ${d.runnerUp.carrier.name} at ${d.runnerUp.totalAmount} — cheapest compliant</div>`:''}`;
+      close('gate', undefined);
+      document.getElementById('s-gate').classList.add('done');
+      document.querySelector('#s-gate .hd .n').textContent='✓';
+      document.querySelector('#s-gate .hd .sum').textContent = `${s.totalAmount} ${s.currency}`;
     } else {
-      const n = d.nearestMiss, c = d.cheapestOverall;
-      show(`<div class="card blocked">
-          <h3>BLOCKED — ${n ? n.failedRules.length : 0} policy rules failed</h3>
-          <div class="carrier">${n?.carrier.name ?? '—'}</div>
-          <div class="price" style="margin:6px 0 4px">${n?.totalAmount ?? '—'} <span class="meta" style="font-size:14px">${n?.currency ?? ''}</span></div>
-          <table class="checks">${n ? ruleRows(n.rules.filter(r=>!r.passed)) : ''}</table>
-          <div class="why">${d.totalOffers} offers evaluated. None compliant.${c && c.offerId !== n?.offerId ? `<br>Cheapest available is ${c.totalAmount} ${c.currency} — still ${c.failedRules.length} rules short.`:''}</div>
-          <div class="banner"><b>No payment session was created.</b> The agent did not fail to pay — it declined to.</div>
-        </div>`);
+      const nm=d.nearestMiss, ch=d.cheapestOverall;
+      body('gate').innerHTML =
+        `<div class="tick" style="margin-bottom:9px">Evaluating 4 rules … <b>${funnel}</b></div>
+         <div class="carrier">Nearest miss — ${nm?.carrier.name??'—'}</div>
+         <div class="price" style="margin:2px 0 8px">${nm?.totalAmount??'—'} <span class="meta" style="font-size:13px">${nm?.currency??''}</span></div>
+         <table class="checks">${nm?ruleRows(nm.rules.filter(r=>!r.passed)):''}</table>
+         <div class="why">${d.totalOffers} offers evaluated. None compliant.${ch&&ch.offerId!==nm?.offerId?`<br>Cheapest available ${ch.totalAmount} ${ch.currency} — ${ch.failedRules.length} rules short.`:''}</div>
+         <div class="banner"><b>No payment session was created.</b> The agent did not fail to pay — it declined to.</div>`;
+      close('gate', undefined, 'stop');
+      document.querySelector('#s-gate .hd .sum').textContent = 'BLOCKED';
     }
   }
 
-  if (e.type === 'holding') stage.insertAdjacentHTML('beforeend', `<div class="card tick" id="hold">Reserving seats …</div>`);
-  if (e.type === 'held') {
-    const el = document.getElementById('hold');
-    if (el) el.innerHTML = `Seats reserved · PNR <b>${e.pnr}</b> · ${e.carrier} · ${e.amount} ${e.currency} <span class="meta">(no payment yet)</span>`;
+  if(e.type==='holding') body('hold').innerHTML = `<div class="tick">Reserving seats<b> …</b></div>`;
+  if(e.type==='held'){
+    body('hold').innerHTML = `<div class="tick">PNR <b>${e.pnr}</b> · ${e.amount} ${e.currency} <span class="meta">— reserved, nothing paid yet</span></div>`;
+    close('hold', `PNR ${e.pnr}`);
+  }
+  if(e.type==='hold_refused')
+    body('hold').insertAdjacentHTML('beforeend', `<div class="tick" style="color:var(--warn)">airline refused hold — trying next compliant offer</div>`);
+
+  if(e.type==='awaiting_passkey')
+    body('auth').innerHTML =
+      `<div class="price">${e.amount} <span class="meta" style="font-size:13px">${e.currency}</span></div>
+       <div class="tick">TravelGuard24 · one-time · locked to this merchant and this exact amount</div>
+       <div class="banner blue"><b>Waiting for passkey…</b> Visa-hosted prompt opened in your browser.</div>`;
+
+  if(e.type==='redeemed'){
+    close('auth','authorised');
+    const el = body('guard'); el.innerHTML = `<table class="checks" id="gt"></table>`;
+    // Revealed one at a time — simultaneous ticks read as decoration, sequential
+    // ticks read as enforcement.
+    e.redemption.checks.forEach((c,i)=>setTimeout(()=>{
+      document.getElementById('gt')?.insertAdjacentHTML('beforeend',
+        `<tr class="chk"><td class="${c.passed?'pass':'fail'}">${c.passed?'✓':'✕'}</td>
+         <td class="lbl">${c.check.replace(/_/g,' ')}</td>
+         <td>${c.observed}${c.passed?'':` <span class="fail">— expected ${c.expected}</span>`}</td></tr>`);
+      if(i===e.redemption.checks.length-1){
+        if(!e.redemption.accepted){
+          el.insertAdjacentHTML('beforeend','<div class="banner"><b>Rejected.</b> Credential refused — the airline is never paid.</div>');
+          close('guard', undefined,'stop');
+          document.querySelector('#s-guard .hd .sum').textContent='REJECTED';
+        } else close('guard','3 checks passed');
+      }
+    }, 420*i));
   }
 
-  if (e.type === 'awaiting_passkey')
-    show(`<div class="card">
-        <div class="meta">Authorise payment</div>
-        <div class="price" style="margin:8px 0">${e.amount} <span class="meta" style="font-size:14px">${e.currency}</span></div>
-        <div class="tick">TravelGuard24 · one-time<br>Locked to this merchant and this exact amount.</div>
-        <div class="banner" style="background:#04121f;border-color:#12314d"><b style="color:var(--hi)">Waiting for passkey…</b> A Visa-hosted prompt has opened in your browser.</div>
-      </div>`);
+  if(e.type==='settling') body('settle').innerHTML = `<div class="tick">Paying airline via Duffel balance<b> …</b></div>`;
 
-  if (e.type === 'redeemed') {
-    const rows = e.redemption.checks.map(c => `<tr>
-      <td class="${c.passed?'pass':'fail'}">${c.passed?'✓':'✕'}</td>
-      <td class="lbl">${c.check.replace(/_/g,' ')}</td>
-      <td>${c.observed}${c.passed?'':` <span class="fail">— expected ${c.expected}</span>`}</td></tr>`).join('');
-    show(`<div class="card">
-        <div class="meta">Merchant redemption — mandate enforcement</div>
-        <table class="checks">${rows}</table>
-        ${e.redemption.accepted ? '' : '<div class="banner"><b>Rejected.</b> The credential was refused; the airline is never paid.</div>'}
-      </div>`);
+  if(e.type==='ticketed'){
+    close('settle','settled');
+    body('done').innerHTML =
+      `<table class="checks hero">
+         <tr><td class="pass">✓</td><td class="lbl">PNR</td><td><b>${e.pnr}</b></td></tr>
+         <tr><td class="pass">✓</td><td class="lbl">E-ticket</td><td>issued${e.eTicketNumber?` <span class="meta">(${e.eTicketNumber})</span>`:''}</td></tr>
+         <tr><td class="pass">✓</td><td class="lbl">Mandate</td><td>closed · visa_confirmation SUCCESS</td></tr>
+         <tr><td class="pass">✓</td><td class="lbl">Audit</td><td>${entries} entries · chain verified</td></tr>
+       </table>`;
+    close('done', undefined);
+    document.querySelector('#s-done .hd .n').textContent='✓';
   }
 
-  if (e.type === 'settling') stage.insertAdjacentHTML('beforeend', `<div class="card tick">Settling with airline …</div>`);
-
-  if (e.type === 'ticketed')
-    show(`<div class="card">
-        <table class="checks">
-          <tr><td></td><td class="lbl">PNR</td><td><b>${e.pnr}</b></td></tr>
-          <tr><td class="pass">✓</td><td class="lbl">E-ticket</td><td>issued${e.eTicketNumber?` <span class="meta">(${e.eTicketNumber})</span>`:''}</td></tr>
-          <tr><td class="pass">✓</td><td class="lbl">Mandate</td><td>closed · visa_confirmation SUCCESS</td></tr>
-          <tr><td class="pass">✓</td><td class="lbl">Audit</td><td>entry #${entries} · chain verified</td></tr>
-        </table>
-      </div>`);
-
-  if (e.type === 'audit') addAudit(e);
-  if (e.type === 'finished') $('#go').disabled = false;
+  if(e.type==='audit') addAudit(e);
+  if(e.type==='finished'){ $('#go').disabled=false; flow.scrollTop=flow.scrollHeight; }
 };
 </script>
 </body>
