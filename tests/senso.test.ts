@@ -239,6 +239,15 @@ describe('resolvePolicy — every path yields a usable policy', () => {
     expect(r.policy).toEqual(LOCAL);
   });
 
+  it('reports an empty knowledge base as no_results, not as a parse failure', async () => {
+    // The live shape when nothing is ingested yet: prose that parses as an answer but
+    // yields no JSON. Calling that `unparseable` sends you to the wrong bug.
+    const empty = { answer: 'No results found for your query.', results: [], total_results: 0 };
+    const r = await resolvePolicy({ local: LOCAL, client: clientReturning(empty), now });
+    expect(r.provenance.reason).toBe('no_results');
+    expect(r.policy).toEqual(LOCAL);
+  });
+
   it('falls back when the answer contains no JSON', async () => {
     const r = await resolvePolicy({ local: LOCAL, client: clientReturning({ answer: 'I am not sure.' }), now });
     expect(r.provenance.reason).toBe('unparseable');

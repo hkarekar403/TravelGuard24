@@ -51,6 +51,8 @@ export type ProvenanceReason =
   | 'retrieved'
   | 'request_failed'
   | 'no_answer'
+  /** The knowledge base matched nothing — the document is missing or still indexing. */
+  | 'no_results'
   | 'unparseable'
   | 'schema_invalid'
   | 'would_widen';
@@ -114,7 +116,22 @@ export type SensoSearchResponse = {
   sources?: unknown;
   citations?: unknown;
   results?: unknown;
+  total_results?: unknown;
 };
+
+/**
+ * True when the query matched nothing in the knowledge base.
+ *
+ * Worth separating from a parse failure: an empty base answers in prose ("No results found
+ * for your query"), which does parse as an answer and then fails to yield JSON. Reporting
+ * that as `unparseable` would send someone debugging the extractor when the real cause is
+ * a document that was never ingested, or is still indexing.
+ */
+export function hasNoResults(res: SensoSearchResponse): boolean {
+  if (typeof res.total_results === 'number') return res.total_results === 0;
+  if (Array.isArray(res.results)) return res.results.length === 0;
+  return false;
+}
 
 export function createSensoClient(apiKey: string, baseUrl = SENSO_BASE_URL, timeoutMs = DEFAULT_TIMEOUT_MS): SensoClient {
   return {
@@ -361,6 +378,8 @@ export async function resolvePolicy(opts: ResolveOptions): Promise<ResolvedPolic
   } catch (err) {
     return fallback('request_failed', err instanceof Error ? err.message : String(err));
   }
+
+  if (hasNoResults(res)) return fallback('no_results');
 
   const answer = readAnswer(res);
   if (!answer) return fallback('no_answer');

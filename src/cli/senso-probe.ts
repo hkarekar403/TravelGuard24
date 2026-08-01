@@ -45,49 +45,59 @@ const readLocalPolicy = (): Policy =>
   JSON.parse(readFileSync(fileURLToPath(new URL('policy.json', ROOT)), 'utf8')) as Policy;
 
 /**
- * Candidate ingest endpoints, most likely first. Each is tried once; the first non-404
- * wins. A 4xx that is not 404 still tells us the path exists and the body was wrong, which
- * is more useful than a silent failure.
+ * `POST /org/kb/raw` with `{ title, text, kb_folder_node_id?, tag_ids? }`.
+ *
+ * Neither the path nor the body is in Senso's public API reference — both were read off
+ * their published CLI (`@senso-ai/cli`, `dist/cli.js`, the `kb create-raw` command), which
+ * is authoritative in a way that guessing paths is not. Five plausible REST paths were
+ * tried first and all returned 404.
  */
-const INGEST_CANDIDATES = ['/content/raw', '/content', '/org/content', '/documents', '/ingest'];
+const INGEST_PATH = '/org/kb/raw';
 
 async function ingest(): Promise<void> {
   const key = apiKey();
   const text = readPolicyDoc();
-  console.log(`document: ${text.length} chars\n`);
+  console.log(`document: ${text.length} chars`);
 
-  for (const path of INGEST_CANDIDATES) {
-    process.stdout.write(`POST ${path} ... `);
-    try {
-      const res = await request<unknown>({
-        method: 'POST',
-        url: `${BASE}${path}`,
-        headers: { 'X-API-Key': key },
-        body: {
-          title: 'Acme Corp Corporate Air Travel Policy (ACME-TRV-001 v1.4)',
-          summary: 'Authoritative corporate air travel rules: budget cap, cabin class, advance purchase, approved carriers.',
-          text,
-          content: text,
-        },
-        timeoutMs: 30_000,
-        vendor: 'senso',
-      });
-      console.log('OK');
-      console.log(JSON.stringify(res, null, 2).slice(0, 1200));
-      console.log(`\n=> ingest endpoint is ${path}`);
-      return;
-    } catch (err) {
-      if (err instanceof ApiError) {
-        console.log(`${err.status}`);
-        // A non-404 means the path is real and only the body is wrong — worth seeing.
-        if (err.status !== 404) console.log(`   ${JSON.stringify(err.body).slice(0, 400)}`);
-      } else {
-        console.log(err instanceof Error ? err.message : String(err));
-      }
-    }
+  // The folder may or may not be required. Ask for the KB root first and send it when the
+  // API offers one — cheaper than discovering the requirement from a 422.
+  let folderId: string | undefined;
+  try {
+    const root = await request<Record<string, unknown>>({
+      method: 'GET',
+      url: `${BASE}/org/kb/root`,
+      headers: { 'X-API-Key': key },
+      timeoutMs: 30_000,
+      vendor: 'senso',
+    });
+    const id = root['id'] ?? root['node_id'] ?? (root['node'] as Record<string, unknown> | undefined)?.['id'];
+    if (typeof id === 'string') folderId = id;
+    console.log(`kb root : ${folderId ?? 'none returned'}`);
+  } catch (err) {
+    console.log(`kb root : unavailable (${err instanceof ApiError ? err.status : 'error'}) — sending without a folder`);
   }
-  console.log('\nNo candidate accepted. Ingest the document via the Senso dashboard or CLI instead;');
-  console.log('the read path (query) is what the server actually uses.');
+
+  console.log(`\nPOST ${INGEST_PATH}`);
+  try {
+    const res = await request<unknown>({
+      method: 'POST',
+      url: `${BASE}${INGEST_PATH}`,
+      headers: { 'X-API-Key': key },
+      body: {
+        title: 'Acme Corp Corporate Air Travel Policy (ACME-TRV-001 v1.4)',
+        text,
+        ...(folderId ? { kb_folder_node_id: folderId } : {}),
+      },
+      timeoutMs: 60_000,
+      vendor: 'senso',
+    });
+    console.log('OK\n');
+    console.log(JSON.stringify(res, null, 2).slice(0, 1500));
+    console.log('\nIndexing is not instant — if `query` returns no results, wait and retry.');
+  } catch (err) {
+    console.log(err instanceof ApiError ? `${err.status}: ${JSON.stringify(err.body).slice(0, 600)}` : String(err));
+    process.exitCode = 1;
+  }
 }
 
 async function query(): Promise<void> {
