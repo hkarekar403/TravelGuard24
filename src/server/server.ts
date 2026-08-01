@@ -33,7 +33,10 @@ import {
   type UiEvent,
 } from './events.js';
 
-const PORT = 3000;
+// Overridable so a second instance can be run against the same code without disturbing
+// a window that is already open — closing the demo page to test something is how you
+// lose a session mid-flow.
+const PORT = Number(process.env.PORT ?? 3000);
 const ROOT = new URL('../../', import.meta.url);
 
 const policy = JSON.parse(readFileSync(fileURLToPath(new URL('policy.json', ROOT)), 'utf8')) as Policy;
@@ -91,8 +94,15 @@ async function runBooking(body: BookBody): Promise<void> {
         ...realPrava,
         async createSession(req) {
           const session = await realPrava.createSession(req);
-          // Opening the checkout is the passkey step. On screen it is one tap.
-          spawn('cmd', ['/c', 'start', 'chrome', session.iframeUrl], { stdio: 'ignore', detached: true }).unref();
+          // Opening the checkout is the passkey step. When a browser is watching it
+          // opens the checkout itself, as a positioned popup, so the handoff reads as
+          // a payment modal over the agent rather than a tab switch away from it.
+          // Only when nothing is watching (CLI rehearsal) does the server open a tab —
+          // otherwise the checkout would open twice, and a second window holding the
+          // same session is exactly the tab collision that has broken runs before.
+          if (clients.size === 0) {
+            spawn('cmd', ['/c', 'start', 'chrome', session.iframeUrl], { stdio: 'ignore', detached: true }).unref();
+          }
           return session;
         },
       },
