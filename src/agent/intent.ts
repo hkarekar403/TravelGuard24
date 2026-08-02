@@ -73,8 +73,9 @@ const MONTHS: Record<string, number> = {
 const CABIN_WORDS: Array<[RegExp, CabinClass]> = [
   [/\bfirst\s*class\b/i, 'first'],
   [/\bbusiness\b/i, 'business'],
-  [/\bpremium\s*economy\b/i, 'premium_economy'],
-  [/\beconomy\b/i, 'economy'],
+  [/\bpremium\s*econom(?:y|ic)\b/i, 'premium_economy'],
+  // "economic" is what dictation writes when you say "economy" — observed on a live run.
+  [/\beconom(?:y|ic)\b/i, 'economy'],
 ];
 
 const pad = (n: number) => String(n).padStart(2, '0');

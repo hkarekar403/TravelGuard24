@@ -235,6 +235,9 @@ describe('cabin', () => {
     ['premium economy please', 'premium_economy'],
     ['first class SYD to LHR', 'first'],
     ['SYD to LHR economy', 'economy'],
+    // Dictation writes "economic" for "economy" — seen on a live run.
+    ['Book me an economic class flight SYD to LHR', 'economy'],
+    ['premium economic SYD to LHR', 'premium_economy'],
   ])('reads %s', async (text, expected) => {
     expect((await heard(text)).cabinClass).toBe(expected);
   });
