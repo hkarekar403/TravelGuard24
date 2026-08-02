@@ -69,9 +69,15 @@ No phone or Linq account needed.
 
 ---
 
-## 1 · Request understanding — free, no vendor calls
+## 1 · Request understanding
 
 The agent must never invent a detail the traveller did not supply.
+
+> **⚠ Only the refusal cases are free.** TC-101 to TC-104 and TC-106 stop before any vendor is
+> contacted and cost nothing. **TC-105, TC-107 and TC-108 are complete requests** — they run a
+> real search and go on to offer payment. They cost nothing either **unless you approve the
+> passkey**, which completes a booking and consumes a sandbox transaction. Read the outcome on
+> screen and simply do not approve, unless you meant to.
 
 ### TC-101 · Nothing usable
 > 🗣 *"Book me a flight."*
