@@ -9,9 +9,10 @@
 node_modules/
 Duffel_working_APIs/
 
-# Editor-local, not part of the product
+# Editor-local, not part of the product. The whole .claude/ directory is tooling
+# permissions and local state — no secrets, but no value to a reader either.
 .vscode/
-.claude/settings.local.json
+.claude/
 
 temp/
 logs/

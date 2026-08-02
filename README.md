@@ -275,11 +275,19 @@ cp .env.example .env.local     # Prava, Duffel, Linq, Senso keys
 npx tsx src/server/server.ts   # http://localhost:3000
 ```
 
-Everything is localhost. Nothing connects inward — Linq is polled rather than webhooked, and
-Prava has no webhooks, so outcomes are polled. No deployment, no tunnel.
+Nothing connects inward — Linq is polled rather than webhooked, and Prava has no webhooks, so
+outcomes are polled. There is no tunnel and no inbound callback, which is what lets the entire
+booking flow run from a laptop.
+
+The hosted instance is the same code with **`PUBLIC_DEMO=1`**: it runs discovery and the policy
+gate against live inventory and stops there, never reserving a seat or requesting a mandate. It
+is deployed with no payment credentials at all, so "this instance cannot spend" is a property of
+its environment rather than a flag someone could flip. The server binds **loopback unless told
+otherwise** — a deployment that needs a public interface sets `HOST` explicitly, so "nothing
+connects inward" stays true of every instance that has not opted out.
 
 ```bash
-npm test           # 170 tests
+npm test           # 174 tests
 npm run typecheck
 ```
 
