@@ -272,9 +272,20 @@ Everything is localhost. Nothing connects inward — Linq is polled rather than 
 Prava has no webhooks, so outcomes are polled. No deployment, no tunnel.
 
 ```bash
-npm test           # 121 tests
+npm test           # 154 tests
 npm run typecheck
 ```
+
+**A manual test plan is in [`docs/test-plan.md`](docs/test-plan.md)** — 30 numbered cases a
+tester with no prior knowledge of the project can follow, covering request understanding,
+the policy gate, an end-to-end booking, the mandate guardrails, and the security properties.
+Everything except the booking and guardrail cases runs without spending anything.
+
+Two things it opens with, because they cost more time than any real bug: **sandbox prices
+and carriers change between every search**, so assert the shape of a result and never an
+exact fare; and **restart the server after a code change, hard-reload the tab after a
+restart** — a stale process serves the new page with old routes, and a stale page renders
+old data from a fresh server.
 
 For the real iMessage channel: `CHANNEL=imessage`. Omit it for the built-in demo channel,
 which stays watched either way.
