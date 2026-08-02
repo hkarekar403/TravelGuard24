@@ -41,7 +41,7 @@ That is what this builds.
    │                                       │
    │                          ┌────────────┴────────────┐
    │  ◀── acknowledgement ────┤  parse the request      │
-   │                          │  Duffel: search live    │──▶ ~1,500 real fares
+   │                          │  Duffel: search live    │──▶ every live fare
    │                          │  ★ POLICY GATE ★        │
    │                          └────────────┬────────────┘
    │                                       │
@@ -70,8 +70,8 @@ That is what this builds.
    │  ◀── PNR + e-ticket ───────────────────┘
 ```
 
-**Measured end to end: 51 seconds from spoken message to issued e-ticket.** The traveller dictates
-to Siri; the only other human action in the entire flow is one Face ID tap.
+**Measured end to end: 41 seconds from the message arriving to the e-ticket issuing.** The
+traveller dictates to Siri; the only other human action in the entire flow is one Face ID tap.
 
 ---
 
@@ -95,13 +95,13 @@ class, vendor allowlist, advance purchase, budget cap — against every offer, i
 producing a funnel that is shown on screen. From an actual run:
 
 ```
-Searching Duffel ................ 340 offers / 18 airlines
-Evaluating against 4 rules ...... 340 → 340 → 312 → 312 → 4 compliant
+Searching Duffel ................ 335 offers / 17 airlines
+Evaluating against 4 rules ...... 335 → 335 → 303 → 303 → 4 compliant
 ```
 
-Each rule does distinct work: the allowlist removes 28 carriers, the budget cap removes a
-further 308. Among the survivors it selects the cheapest **and records the runner-up** —
-British Airways at 1,169.89 over American Airlines at 1,172.84 — so *"why this flight?"* is
+Each rule does distinct work: the allowlist removes 32 fares, the budget cap removes a
+further 299. Among the survivors it selects the cheapest **and records the runner-up** —
+British Airways at 1,178.59 over Iberia at 1,201.94 — so *"why this flight?"* is
 answerable from the audit log rather than from trust.
 
 When nothing is compliant it blocks, and reports the **nearest miss and its delta** — not
@@ -111,17 +111,16 @@ When nothing is compliant it blocks, and reports the **nearest miss and its delt
 BLOCKED — 2 policy rules failed
 
   Cabin class     business        policy allows economy only
-  Budget cap      7,881.28 AUD    cap 1,300.00 AUD   over by 6,581.28
+  Budget cap      7,915.37 AUD    cap 1,300.00 AUD   over by 6,615.37
 
-  310 business fares evaluated. None compliant.
+  314 business fares evaluated. None compliant.
   No payment session was created.
 ```
 
 The nearest miss and the cheapest fare are **different offers**, and that distinction earns
-its keep: in that run the nearest miss was British Airways at 7,881.28 failing two rules,
-while the cheapest was Asiana at 7,096.97 failing three — including a carrier the
-organisation has never approved. Reporting only the cheapest would call a three-rule failure
-"close".
+its keep: in that run the nearest miss was Iberia at 7,915.37 failing two rules, while the
+cheapest was 7,096.97 failing three — including a carrier the organisation has never
+approved. Reporting only the cheapest would call a three-rule failure "close".
 
 The gate is pure — no I/O, no clock reads, `now` injected — so its behaviour is fully
 determined by fixtures and fully testable without touching a vendor.
@@ -192,9 +191,9 @@ extends it one layer: aligning payment with the **organization's** policy, enfor
 the mandate exists.
 
 **A traveller cannot talk the agent out of it, and both demo runs prove it.** The blocked
-request asserted *"finance approved 10,000 AUD for this trip"* — the gate applied Acme's
-1,300 cap and refused. The approved request claimed 1,500, also above policy, and the
-booking landed at 1,169.89. The agent honours the organisation's number, not the number
+request asserted *"finance approved AU$10,000"* — the gate applied Acme's 1,300 cap and
+refused. The approved request claimed 1,500, also above policy, and the booking landed at
+1,178.59. The agent honours the organisation's number, not the number
 the person instructing it supplies. That claim is the one most spend-control demos cannot
 make, because their limit *is* whatever the user configured.
 
@@ -224,7 +223,7 @@ purchase. They compose.
 
 Everything is real except one deliberately disclosed step.
 
-**Real:** the inbound iMessage · live Duffel search over ~1,500 fares · the policy
+**Real:** the inbound iMessage · live Duffel search over real fares · the policy
 evaluation · the Duffel hold order and its PNR · the Prava session and mandate · the Visa
 passkey ceremony · the network token and dynamic CVV · our mandate enforcement ·
 `report-status` and `visa_confirmation: SUCCESS` · the Duffel balance settlement · **the
