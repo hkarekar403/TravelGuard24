@@ -324,6 +324,49 @@ describe('I1 — no Prava session unless the policy gate approved', () => {
   });
 });
 
+describe('gateOnly — the public instance decides but cannot spend', () => {
+  it('approves a fare without reserving a seat or requesting a mandate', async () => {
+    const { calls, deps, request } = harness();
+
+    const outcome = await bookTrip({ ...request, gateOnly: true }, deps);
+
+    expect(outcome.status).toBe('GATE_ONLY');
+    // The negative assertions are the point: a stranger on the internet reaches none of
+    // these. No seat is held on a real airline, and no sandbox allowance is consumed.
+    expect(calls.createHoldOrder).toBe(0);
+    expect(calls.createSession).toHaveLength(0);
+    expect(calls.reportStatus).toHaveLength(0);
+    expect(calls.redeem).toBe(0);
+    expect(calls.payFromBalance).toHaveLength(0);
+  });
+
+  it('still records the decision — a gate that decides in private evidences nothing', async () => {
+    const { calls, deps, request } = harness();
+
+    await bookTrip({ ...request, gateOnly: true }, deps);
+
+    expect(auditTypes(calls)).toEqual(['POLICY_APPROVED']);
+  });
+
+  it('changes nothing on the blocked path, which already stopped at the gate', async () => {
+    const { calls, deps, request } = harness({ decision: decisionBlocked() });
+
+    const outcome = await bookTrip({ ...request, gateOnly: true }, deps);
+
+    expect(outcome.status).toBe('BLOCKED_BY_POLICY');
+    expect(auditTypes(calls)).toEqual(['POLICY_BLOCKED']);
+  });
+
+  it('defaults to off, so the real instance is unaffected', async () => {
+    const { calls, deps, request } = harness();
+
+    const outcome = await bookTrip(request, deps);
+
+    expect(outcome.status).toBe('CONFIRMED');
+    expect(calls.createSession).toHaveLength(1);
+  });
+});
+
 describe('I2 — the mandate is the exact price, never the budget cap', () => {
   it('sends the order total verbatim', async () => {
     const { calls, deps, request } = harness();

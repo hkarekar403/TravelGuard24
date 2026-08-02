@@ -49,18 +49,27 @@ export function loadEnvFile(path = '.env.local'): Record<string, string> {
   return out;
 }
 
-export function loadConfig(path?: string): Config {
+/**
+ * @param opts.requirePrava
+ *   Whether the Prava secret is mandatory. The PUBLIC instance runs the policy gate and
+ *   stops, so it is deployed with **no payment credentials in its environment at all** —
+ *   which makes "this deployment cannot spend money" a property of the machine rather than
+ *   a flag someone could flip. Refusing to boot for want of a key it must not hold would
+ *   defeat that, so the requirement is lifted rather than the key faked.
+ */
+export function loadConfig(path?: string, opts: { requirePrava?: boolean } = {}): Config {
   const file = loadEnvFile(path);
   const get = (key: string): string => {
     const value = process.env[key] ?? file[key];
     if (!value) throw new Error(`Missing required configuration: ${key}`);
     return value;
   };
+  const requirePrava = opts.requirePrava ?? true;
 
   return {
     // Sandbox is a different HOST, not a path prefix on the production one.
     pravaBaseUrl: process.env['PRAVA_BASE_URL'] ?? file['PRAVA_BASE_URL'] ?? 'https://sandbox.api.prava.space',
-    pravaSecretKey: get('MERCHANT_SECRET_KEY'),
+    pravaSecretKey: requirePrava ? get('MERCHANT_SECRET_KEY') : (process.env['MERCHANT_SECRET_KEY'] ?? file['MERCHANT_SECRET_KEY'] ?? ''),
     // Optional: without it the checkout offers the default card.
     pravaCardId: process.env['PRAVA_CARD_ID'] ?? file['PRAVA_CARD_ID'] ?? '',
     duffelBaseUrl: process.env['DUFFEL_BASE_URL'] ?? file['DUFFEL_BASE_URL'] ?? 'https://api.duffel.com',

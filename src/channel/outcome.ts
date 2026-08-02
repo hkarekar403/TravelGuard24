@@ -207,6 +207,19 @@ export function composeReply(outcome: BookingOutcome, opts: { org?: string } = {
     case 'BLOCKED_BY_POLICY':
       return blockedText(outcome.decision, org);
 
+    // The public instance runs the gate and stops. Say why in terms of what was NOT done,
+    // because "approved" on its own reads as "booked" — and nobody has a seat.
+    case 'GATE_ONLY': {
+      const s = outcome.decision.selected;
+      const fare = s ? `${s.carrier.name} at ${money(s.totalAmount, s.currency)}` : 'a compliant fare';
+      return [
+        `Approved: ${fare}. It passed all four of ${org} policy rules.`,
+        '',
+        'This is the public demo, so I stopped here. Nothing was reserved and nothing was charged —',
+        'no seat was held and no payment credential was requested.',
+      ].join('\n');
+    }
+
     case 'NO_BOOKABLE_OFFER': {
       const carriers = [...new Set(outcome.attempts.map((a) => a.carrier))];
       // Negation has to be explicit. "the airline would hold it without immediate

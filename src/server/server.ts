@@ -47,6 +47,23 @@ import {
 const PORT = Number(process.env.PORT ?? 3000);
 const ROOT = new URL('../../', import.meta.url);
 
+/**
+ * PUBLIC MODE — the hosted instance judges can open and try.
+ *
+ * It runs discovery and the policy gate against live inventory, writes the audit entry,
+ * and stops. It never reserves a seat and never requests a mandate, so a stranger cannot
+ * spend anything and cannot consume the sandbox allowance.
+ *
+ * The guarantee is structural, not a flag: this deployment is given **no Prava credentials
+ * at all**, so even a bug that reached the payment branch would have nothing to pay with.
+ *
+ * Loopback stays the DEFAULT. A platform that must bind a public interface has to say so
+ * explicitly, because "nothing connects inward" is a claim the README makes and it must
+ * remain true of every instance that has not opted out.
+ */
+const PUBLIC_MODE = (process.env['PUBLIC_DEMO'] ?? '') === '1';
+const HOST = process.env['HOST'] ?? (PUBLIC_MODE ? '0.0.0.0' : '127.0.0.1');
+
 const localPolicy = JSON.parse(readFileSync(fileURLToPath(new URL('policy.json', ROOT)), 'utf8')) as Policy;
 
 const clock: Clock = { now: () => new Date(), sleep: (ms) => new Promise((r) => setTimeout(r, ms)) };
@@ -181,7 +198,7 @@ async function runBooking(request: InboundRequest, tamper: TamperMode): Promise<
   if (running) return;
   running = true;
   try {
-    const config = loadConfig();
+    const config = loadConfig(undefined, { requirePrava: !PUBLIC_MODE });
 
     // The approval message names the airline, which is only known once a hold succeeds —
     // and after a fallback it is not the carrier the gate first chose. Captured off the
@@ -294,6 +311,7 @@ async function runBooking(request: InboundRequest, tamper: TamperMode): Promise<
         userId: 'test_user_002',
         userEmail: 'traveler@travelguard24-demo.vercel.app',
         cardId: config.pravaCardId,
+        gateOnly: PUBLIC_MODE,
       },
       { duffel, prava, merchant, audit, clock, evaluate: instrumentEvaluate(evaluate, emit) },
     );
@@ -403,7 +421,16 @@ createServer((req, res) => {
     });
     res.write(': connected\n\n');
     clients.add(res);
-    req.on('close', () => clients.delete(res));
+    // A hosted instance sits behind a proxy that closes an idle connection, and the gap
+    // between opening the page and sending a message is easily longer than that. The
+    // symptom would be the worst kind: a visitor sends a request and the screen never
+    // moves, because the stream died while nothing was happening. A comment frame is
+    // ignored by EventSource and keeps the connection alive.
+    const keepAlive = setInterval(() => res.write(': keep-alive\n\n'), 20_000);
+    req.on('close', () => {
+      clearInterval(keepAlive);
+      clients.delete(res);
+    });
     return;
   }
 
@@ -431,6 +458,14 @@ createServer((req, res) => {
   // Arms the demo affordance for the next run. A request now arrives from a phone and
   // starts on its own, so this can no longer ride along with a confirmation.
   if (url.pathname === '/tamper' && req.method === 'POST') {
+    // Meaningless in public mode — the redemption step is never reached — and it is a
+    // server-side global, so leaving it reachable would let one visitor arm a mode that
+    // silently changes what the next visitor sees.
+    if (PUBLIC_MODE) {
+      res.writeHead(404, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'not available on the public demo' }));
+      return;
+    }
     readJsonBody(req, res, (body) => {
       // Validated rather than cast: an unrecognised mode must mean "no tampering", never
       // an accidental rejection of a real booking.
@@ -447,10 +482,16 @@ createServer((req, res) => {
 // network exposes /simulate — a booking trigger — and /tamper to anyone on the same WiFi.
 // "Nothing connects inward" is a claim this file makes at the top and the README repeats;
 // this is what makes it true rather than merely intended.
-}).listen(PORT, '127.0.0.1', () => {
-  console.log(`TravelGuard24 demo  ->  http://localhost:${PORT}`);
+}).listen(PORT, HOST, () => {
+  console.log(`TravelGuard24 demo  ->  http://${HOST}:${PORT}`);
   console.log(`policy:  ${policy.org} · cap ${(policy.budgetCapMinor / 100).toFixed(2)} ${policy.currency}`);
   console.log(`channel: ${channel.kind} (${channel.address})`);
+  if (PUBLIC_MODE) {
+    console.log('mode:    PUBLIC — gate only. No hold, no mandate, no payment.');
+    if (process.env['MERCHANT_SECRET_KEY']) {
+      console.warn('  WARNING: a Prava secret is present in a public deployment. Remove it.');
+    }
+  }
   if (wantsIMessage && !linqKey) console.warn('CHANNEL=imessage but LINQ_API_KEY is missing — using the demo channel');
   void watch();
 });

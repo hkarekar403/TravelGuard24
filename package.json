@@ -6,6 +6,7 @@
   "description": "Policy-gated Prava payments adapter for agentic travel booking",
   "engines": { "node": ">=20" },
   "scripts": {
+    "start": "tsx src/server/server.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit"

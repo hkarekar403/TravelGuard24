@@ -46,6 +46,19 @@ export type BookingRequest = {
   userEmail: string;
   /** Enrolled card to pre-select, avoiding a card-picker surprise mid-demo. */
   cardId: string;
+  /**
+   * Stop once the gate has decided, without reserving a seat or requesting a mandate.
+   *
+   * This exists for the PUBLIC instance, where a stranger must be able to exercise the
+   * product without being able to spend anything. It is deliberately a first-class outcome
+   * rather than a stubbed vendor: making a hold "fail" would put a sentence on screen
+   * blaming an airline that did nothing, and a product whose claim is that its records are
+   * trustworthy cannot afford a screen that lies about why it stopped.
+   *
+   * Note this changes nothing on the blocked path, which already terminates at the gate.
+   * It only bounds the approved one.
+   */
+  gateOnly?: boolean;
 };
 
 export type Dependencies = {
@@ -59,6 +72,7 @@ export type Dependencies = {
 
 export type BookingOutcome =
   | { status: 'BLOCKED_BY_POLICY'; decision: PolicyDecision }
+  | { status: 'GATE_ONLY'; decision: PolicyDecision }
   | { status: 'PRICE_DRIFTED'; quoted: string; ordered: string; pnr: string }
   | { status: 'NO_BOOKABLE_OFFER'; attempts: Array<{ offerId: string; carrier: string; error: string }> }
   | { status: 'AUTHORISATION_TIMED_OUT'; pnr: string; sessionId: string }
@@ -133,6 +147,13 @@ export async function bookTrip(req: BookingRequest, deps: Dependencies): Promise
       carrier: decision.runnerUp.carrier,
     },
   });
+
+  // I1 restated for the public instance: the gate has decided, and that decision is the
+  // product. Everything past this line reserves a seat or asks for money, so the public
+  // deployment stops here — with the decision recorded exactly as it would have been.
+  if (req.gateOnly === true) {
+    return { status: 'GATE_ONLY', decision };
+  }
 
   // -- 3/4. Re-price and hold, falling back down the compliant list ----------
   //

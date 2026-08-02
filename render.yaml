@@ -1,0 +1,33 @@
+# Public demo instance.
+#
+# This deployment runs discovery and the policy gate against live inventory and STOPS.
+# It never reserves a seat and never requests a payment mandate.
+#
+# The guarantee is structural rather than configured: no Prava credential is present in
+# this environment, so there is nothing here to pay with. Do not add MERCHANT_SECRET_KEY —
+# the server warns on boot if it finds one, and the point of this instance is that a
+# stranger can exercise the product without being able to spend anything.
+#
+# `--include=dev` is deliberate: the runtime is `tsx`, which is a devDependency, and the
+# platform sets NODE_ENV=production, which would otherwise skip it and fail at start.
+services:
+  - type: web
+    name: travelguard24
+    runtime: node
+    plan: free
+    buildCommand: npm install --include=dev
+    startCommand: npx tsx src/server/server.ts
+    healthCheckPath: /policy
+    envVars:
+      - key: PUBLIC_DEMO
+        value: "1"
+      - key: CHANNEL
+        value: demo
+      - key: NODE_VERSION
+        value: "22"
+      # Live flight inventory. Read-only: search and offer refresh. Set in the dashboard.
+      - key: DUFFEL_API_KEY
+        sync: false
+      # Optional. Without it the policy falls back to the committed policy.json and says so.
+      - key: SENSO_API_KEY
+        sync: false

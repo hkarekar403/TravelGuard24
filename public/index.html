@@ -644,6 +644,8 @@ new EventSource('/events').onmessage = (m) => {
      orchestrator had already stopped correctly. A halt that protects an invariant is
      worth showing: it is the same claim as the blocked path, made at the payment layer. */
   const HALTS = {
+    GATE_ONLY: ['The gate approved a fare. This public demo stops there.',
+      'No seat was reserved and no payment credential was requested. The full flow — hold, mandate, passkey, e-ticket — is in the demo video.'],
     NO_BOOKABLE_OFFER: ['Every compliant offer was refused a hold by its airline.',
       'No payment session was created. Policy approved these fares; the carriers would not reserve them.'],
     AUTHORISATION_TIMED_OUT: ['The passkey was never completed.',
