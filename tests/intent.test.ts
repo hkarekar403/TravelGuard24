@@ -234,12 +234,17 @@ describe('stated budget', () => {
   // was what Siri produced on a recorded run, and it captured nothing — so the claim never
   // rendered beside the cap, which is the entire point of capturing it.
   it.each([
+    // Every one of these came off a real dictated run, or is one keystroke from one.
     ['finance approved AU$10,000', '10000'],
+    ['Finance approve AU$10,000', '10000'],
+    ['finance approves AU$10,000', '10000'],
     ['finance approved A$10,000', '10000'],
     ['finance approved US$4,500', '4500'],
     ['finance approved $10,000', '10000'],
     ['finance approved 10,000 AUD', '10000'],
     ['finance approved 10000', '10000'],
+    ['my manager authorise 4,500', '4500'],
+    ['finance sign off on 2000', '2000'],
   ])('captures %s', async (phrase, expected) => {
     expect((await heard(`Book me business class SYD to LHR, 25 to 28 September, ${phrase}`)).statedBudget).toBe(expected);
   });

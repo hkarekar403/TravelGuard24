@@ -321,8 +321,13 @@ export function createMockIntentParser(opts: { year?: number } = {}): IntentPars
       // "A$1,200", "$1,200", "10,000 AUD". Allowing only a bare `$` meant "approved
       // AU$10,000" captured nothing at all — the letters before the symbol broke the match,
       // and the traveller's claim silently failed to render beside the cap.
+      // Deliberately liberal about verb endings. Three recorded runs produced three
+      // different transcriptions of the same spoken sentence — "approved", "approve", and
+      // the currency as "AU$10,000" rather than "10,000 AUD". Matching one exact form means
+      // the claim silently fails to render, which is worse than matching too eagerly: the
+      // number is only ever DISPLAYED beside the cap, never used in a decision.
       const budget = instruction.match(
-        /(?:under|below|max(?:imum)?|budget(?: of)?|less than|approved|authoris?z?ed|signed off(?: on)?)\s*(?:for\s*)?(?:[a-z]{0,3}\s*)?[$€£]?\s*([\d,]+(?:\.\d{2})?)/i,
+        /(?:under|below|max(?:imum)?|budget(?: of)?|less than|approv(?:e|es|ed)|authoris(?:e|es|ed)|authoriz(?:e|es|ed)|sign(?:s|ed)? off(?: on)?)\s*(?:for\s*)?(?:[a-z]{0,3}\s*)?[$€£]?\s*([\d,]+(?:\.\d{2})?)/i,
       );
       const statedBudget = budget?.[1]?.replace(/,/g, '');
 
