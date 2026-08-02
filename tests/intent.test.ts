@@ -230,6 +230,20 @@ describe('stated budget', () => {
     expect((await heard('SYD to LHR, finance signed off on 2000')).statedBudget).toBe('2000');
   });
 
+  // Dictation chooses the currency form, and it does not choose consistently. "AU$10,000"
+  // was what Siri produced on a recorded run, and it captured nothing — so the claim never
+  // rendered beside the cap, which is the entire point of capturing it.
+  it.each([
+    ['finance approved AU$10,000', '10000'],
+    ['finance approved A$10,000', '10000'],
+    ['finance approved US$4,500', '4500'],
+    ['finance approved $10,000', '10000'],
+    ['finance approved 10,000 AUD', '10000'],
+    ['finance approved 10000', '10000'],
+  ])('captures %s', async (phrase, expected) => {
+    expect((await heard(`Book me business class SYD to LHR, 25 to 28 September, ${phrase}`)).statedBudget).toBe(expected);
+  });
+
   it('still captures the plain limit forms', async () => {
     expect((await heard('Book me SYD to LHR, under $1,200')).statedBudget).toBe('1200');
     expect((await heard('Book me SYD to LHR, budget of 1500')).statedBudget).toBe('1500');

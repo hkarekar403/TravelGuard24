@@ -317,8 +317,12 @@ export function createMockIntentParser(opts: { year?: number } = {}): IntentPars
       // a traveller setting themselves a limit, it is one asserting an AUTHORITY —
       // "finance approved 10,000" — and the gate declining to honour it. That beat is only
       // visible if the number is captured, so the claim and the cap can sit side by side.
+      // The currency can arrive as a prefix, and dictation picks the form: "AU$10,000",
+      // "A$1,200", "$1,200", "10,000 AUD". Allowing only a bare `$` meant "approved
+      // AU$10,000" captured nothing at all — the letters before the symbol broke the match,
+      // and the traveller's claim silently failed to render beside the cap.
       const budget = instruction.match(
-        /(?:under|below|max(?:imum)?|budget(?: of)?|less than|approved|authoris?z?ed|signed off(?: on)?)\s*(?:for\s*)?\$?\s*([\d,]+(?:\.\d{2})?)/i,
+        /(?:under|below|max(?:imum)?|budget(?: of)?|less than|approved|authoris?z?ed|signed off(?: on)?)\s*(?:for\s*)?(?:[a-z]{0,3}\s*)?[$€£]?\s*([\d,]+(?:\.\d{2})?)/i,
       );
       const statedBudget = budget?.[1]?.replace(/,/g, '');
 
