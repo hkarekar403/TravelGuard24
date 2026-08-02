@@ -272,7 +272,7 @@ Everything is localhost. Nothing connects inward — Linq is polled rather than 
 Prava has no webhooks, so outcomes are polled. No deployment, no tunnel.
 
 ```bash
-npm test           # 154 tests
+npm test           # 170 tests
 npm run typecheck
 ```
 
