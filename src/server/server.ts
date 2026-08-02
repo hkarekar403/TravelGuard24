@@ -272,7 +272,20 @@ async function runBooking(request: InboundRequest, tamper: TamperMode): Promise<
     // that has broken runs before.
     const deliverApproval = async (url: string, amount: string, currency: string): Promise<string | null> => {
       if (request.channel === 'demo') {
-        spawn('cmd', ['/c', 'start', 'chrome', url], { stdio: 'ignore', detached: true }).unref();
+        // Opening a browser only makes sense where a human is sitting in front of one.
+        // On a hosted Linux box `cmd` does not exist, and a failed spawn emits an `error`
+        // event with nothing listening — an unhandled event takes the process down. That
+        // would kill the run AFTER a seat was held and a mandate requested, i.e. at the
+        // worst possible moment.
+        //
+        // Nothing is lost by skipping it: `awaiting_passkey` already carries `iframeUrl`,
+        // and the screen renders its own button from that. The spawn is a convenience for
+        // a local rehearsal, never the only route to the checkout.
+        if (process.platform === 'win32') {
+          const child = spawn('cmd', ['/c', 'start', 'chrome', url], { stdio: 'ignore', detached: true });
+          child.on('error', () => {});
+          child.unref();
+        }
         return null;
       }
       const selected = { carrier: { name: heldCarrier || 'Your airline' }, totalAmount: amount, currency };
