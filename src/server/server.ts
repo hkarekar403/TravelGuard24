@@ -29,6 +29,7 @@ import type { Clock } from '../orchestrator/ports.js';
 import { createMockIntentParser } from '../agent/intent.js';
 import {
   applyTamper,
+  isTamperMode,
   instrumentAudit,
   instrumentDuffel,
   instrumentEvaluate,
@@ -127,6 +128,53 @@ const POLL_MS = 1_500;
  * for permission and could carry it along.
  */
 let tamperMode: TamperMode = 'none';
+
+/**
+ * Reads a JSON request body safely.
+ *
+ * Two things this guards, both of which used to be able to take the server down mid-demo:
+ * an unguarded `JSON.parse` inside an `end` handler throws where nothing catches it and
+ * kills the process, and an unbounded `data` handler will accumulate whatever it is sent.
+ * A malformed body is answered with a 400, not a crash.
+ */
+const MAX_BODY_BYTES = 64 * 1024;
+
+function readJsonBody(
+  req: import('node:http').IncomingMessage,
+  res: import('node:http').ServerResponse,
+  onBody: (body: Record<string, unknown>) => void,
+): void {
+  let raw = '';
+  let aborted = false;
+
+  req.on('data', (chunk) => {
+    if (aborted) return;
+    raw += chunk;
+    if (raw.length > MAX_BODY_BYTES) {
+      aborted = true;
+      res.writeHead(413, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'body too large' }));
+      req.destroy();
+    }
+  });
+
+  req.on('end', () => {
+    if (aborted) return;
+    let body: Record<string, unknown> = {};
+    if (raw.trim()) {
+      try {
+        const parsed: unknown = JSON.parse(raw);
+        if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error('not an object');
+        body = parsed as Record<string, unknown>;
+      } catch {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'invalid JSON body' }));
+        return;
+      }
+    }
+    onBody(body);
+  });
+}
 
 async function runBooking(request: InboundRequest, tamper: TamperMode): Promise<void> {
   if (running) return;
@@ -347,11 +395,9 @@ createServer((req, res) => {
   // reaches the demo channel — it cannot fabricate an inbound iMessage, so what is on
   // screen during a real run always corresponds to a message that genuinely arrived.
   if (url.pathname === '/simulate' && req.method === 'POST') {
-    let raw = '';
-    req.on('data', (c) => (raw += c));
-    req.on('end', () => {
-      const { text } = (raw ? JSON.parse(raw) : {}) as { text?: string };
-      demoChannel.inject(text?.trim() || 'Book me SYD to LHR return, 15-25 Sept, economy');
+    readJsonBody(req, res, (body) => {
+      const text = typeof body['text'] === 'string' ? body['text'].trim() : '';
+      demoChannel.inject(text || 'Book me SYD to LHR return, 15-25 Sept, economy');
       res.writeHead(202, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ injected: true }));
     });
@@ -361,11 +407,10 @@ createServer((req, res) => {
   // Arms the demo affordance for the next run. A request now arrives from a phone and
   // starts on its own, so this can no longer ride along with a confirmation.
   if (url.pathname === '/tamper' && req.method === 'POST') {
-    let raw = '';
-    req.on('data', (c) => (raw += c));
-    req.on('end', () => {
-      const { mode } = (raw ? JSON.parse(raw) : {}) as { mode?: TamperMode };
-      tamperMode = mode ?? 'none';
+    readJsonBody(req, res, (body) => {
+      // Validated rather than cast: an unrecognised mode must mean "no tampering", never
+      // an accidental rejection of a real booking.
+      tamperMode = isTamperMode(body['mode']) ? body['mode'] : 'none';
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ tamper: tamperMode }));
     });
@@ -374,7 +419,11 @@ createServer((req, res) => {
 
   res.writeHead(404);
   res.end('not found');
-}).listen(PORT, () => {
+// Loopback ONLY, explicitly. `listen(PORT)` alone binds 0.0.0.0, which on a shared venue
+// network exposes /simulate — a booking trigger — and /tamper to anyone on the same WiFi.
+// "Nothing connects inward" is a claim this file makes at the top and the README repeats;
+// this is what makes it true rather than merely intended.
+}).listen(PORT, '127.0.0.1', () => {
   console.log(`TravelGuard24 demo  ->  http://localhost:${PORT}`);
   console.log(`policy:  ${policy.org} · cap ${(policy.budgetCapMinor / 100).toFixed(2)} ${policy.currency}`);
   console.log(`channel: ${channel.kind} (${channel.address})`);

@@ -229,8 +229,17 @@ export function instrumentAudit(inner: AuditPort, emit: Emit): AuditPort {
  */
 export type TamperMode = 'none' | 'amount' | 'merchant' | 'replay';
 
+export const TAMPER_MODES: readonly TamperMode[] = ['none', 'amount', 'merchant', 'replay'];
+
+export const isTamperMode = (v: unknown): v is TamperMode =>
+  typeof v === 'string' && (TAMPER_MODES as readonly string[]).includes(v);
+
 export function applyTamper(inner: MerchantPort, mode: TamperMode): MerchantPort {
-  if (mode === 'none') return inner;
+  // Anything unrecognised means DO NOT TAMPER. Previously any non-'none' value fell through
+  // to the replay branch below, so a typo would silently reject a legitimate booking — a
+  // refusal with no visible cause, which is the one failure that would genuinely undermine
+  // the demo rather than merely interrupt it.
+  if (!isTamperMode(mode) || mode === 'none') return inner;
   return {
     redeem(credential, expected) {
       if (mode === 'amount') {
