@@ -334,7 +334,11 @@ though it were a PAN:
   `token:dynamic_cvv`, because uniqueness is a property of the input, not of the stored
   form. Authentication data is not kept after authorisation — and in-memory is still kept.
 - **Redacted from the audit record** at any depth, by key name.
-- **Zero runtime dependencies**, so there is no supply chain to compromise.
+- **Zero runtime dependencies**, so there is no supply chain to compromise. `npm audit` does
+  report advisories, and every one of them is in the test toolchain — `vitest`, `vite`,
+  `esbuild`. None of it is installed or executed by the running product; `dependencies` is
+  empty. Stated this way rather than as "no vulnerabilities", because the honest claim is
+  the narrower one and it is the one that survives being checked.
 
 **Gaps, stated rather than discovered:** no authentication on the console, no key
 management, no network segmentation, no monitoring or alerting.

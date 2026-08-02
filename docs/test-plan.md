@@ -327,7 +327,7 @@ duplicate `report-status` is accepted upstream.
 | **TC-503** | `curl -X POST http://localhost:3000/tamper -d '{"mode":"nonsense"}'` | Returns `{"tamper":"none"}` — an unrecognised mode must mean *no tampering*. |
 | **TC-504** | Unset `SENSO_API_KEY`, restart | Boots normally on `policy.json`. Bookings still work. |
 | **TC-505** | Watch the event stream during a full booking | **No `token`, `dynamic_cvv`, PAN or CVV in any event.** Credentials never reach the browser. |
-| **TC-506** | `npm audit` | 0 vulnerabilities |
+| **TC-506** | `npm audit` | Advisories, if any, are confined to the **test toolchain** (`vitest`/`vite`/`esbuild`). Verify the thing that actually matters with `npm ls --prod --depth=0`: **`dependencies` is empty**, so nothing from npm runs in the shipped product. |
 
 ### TC-507 · A retrieved policy cannot widen spending authority
 
