@@ -348,7 +348,7 @@ management, no network segmentation, no monitoring or alerting.
 | **Confidentiality** | Good. Credentials never persisted, logged, or transmitted to the client. |
 | **Security** | Partial. Loopback-only binding and zero dependencies help; there is no authn/authz, monitoring, or incident response. |
 | **Availability** | Not addressed. Single process, in-memory state, no HA. One abandoned checkout blocks the agent for 14 minutes. |
-| **Privacy** | The real gap. Passenger name, date of birth, email and phone are transmitted to Duffel with no retention policy, deletion path, or consent record. |
+| **Privacy** | Partly addressed. The traveller's contact is **masked before it leaves the process** — the browser only ever receives `••• 0292`, so it cannot reach a screenshot or a screen recording. Still a gap: passenger name, date of birth and email are transmitted to Duffel with no retention policy, deletion path, or consent record. |
 
 ### SOC 1 — applicable in production, and it points at the same gap
 

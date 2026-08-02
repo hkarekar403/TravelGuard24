@@ -1,4 +1,37 @@
 import { describe, expect, it } from 'vitest';
+import { maskContact } from '../src/channel/types.js';
+
+/**
+ * A real mobile number was legible in a submission screenshot before this existed. The
+ * browser now only ever receives the masked form, so it cannot reach a screen recording or
+ * a shared debugging session at all — the full value stays server-side, where it is needed
+ * to actually send the reply.
+ */
+describe('maskContact', () => {
+  it('keeps only the last four digits of a phone number', () => {
+    expect(maskContact('+61466910292')).toBe('••• 0292');
+  });
+
+  it('masks regardless of formatting', () => {
+    expect(maskContact('+61 466 910 292')).toBe('••• 0292');
+    expect(maskContact('(02) 9876 5432')).toBe('••• 5432');
+  });
+
+  it('keeps an email identifiable without disclosing it', () => {
+    expect(maskContact('traveller@example.com')).toBe('t•••@example.com');
+  });
+
+  it('leaves a non-contact label alone — there is nothing to protect', () => {
+    expect(maskContact('demo')).toBe('demo');
+  });
+
+  it('never returns the original for anything phone-shaped', () => {
+    for (const n of ['+61466910292', '0466910292', '+1 415 555 0134']) {
+      expect(maskContact(n)).not.toBe(n);
+      expect(maskContact(n)).not.toContain(n.replace(/\D/g, '').slice(0, 6));
+    }
+  });
+});
 
 import { composeApproval, composeReply, groupMoney } from '../src/channel/outcome.js';
 import { createDemoChannel } from '../src/channel/demo.js';

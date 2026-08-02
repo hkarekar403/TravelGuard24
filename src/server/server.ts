@@ -16,6 +16,7 @@ import { loadConfig, loadEnvFile } from '../config.js';
 import { createDemoChannel } from '../channel/demo.js';
 import { createLinqChannel } from '../channel/linq.js';
 import { composeAck, composeApproval, composeReply, composeUnclear } from '../channel/outcome.js';
+import { maskContact } from '../channel/types.js';
 import type { InboundChannel, InboundRequest } from '../channel/types.js';
 import { createDuffelClient } from '../duffel/client.js';
 import { createPravaClient } from '../prava/client.js';
@@ -259,7 +260,8 @@ async function runBooking(request: InboundRequest, tamper: TamperMode): Promise<
       }
       const selected = { carrier: { name: heldCarrier || 'Your airline' }, totalAmount: amount, currency };
       await replyTo(request).reply(request.threadId, composeApproval(selected, url));
-      return request.from;
+      // Display only — the reply has already been sent using the real value.
+      return maskContact(request.from);
     };
 
     const prava = instrumentPrava(realPrava, emit, deliverApproval);
@@ -325,12 +327,12 @@ async function notify(request: InboundRequest, text: string): Promise<void> {
   const target = replyTo(request);
   try {
     await target.reply(request.threadId, text);
-    broadcast({ type: 'replied', channel: target.kind, to: request.from, text, delivered: true });
+    broadcast({ type: 'replied', channel: target.kind, to: maskContact(request.from), text, delivered: true });
   } catch (err) {
     broadcast({
       type: 'replied',
       channel: target.kind,
-      to: request.from,
+      to: maskContact(request.from),
       text,
       delivered: false,
       error: err instanceof Error ? err.message : String(err),
@@ -354,7 +356,7 @@ async function watch(): Promise<void> {
           // queued: it would otherwise surface minutes later against a screen showing
           // someone else's booking.
           if (running) continue;
-          broadcast({ type: 'arrived', request });
+          broadcast({ type: 'arrived', request: { ...request, from: maskContact(request.from) } });
           // Proceeds on its own. Searching and gating spend nothing, so there is nothing
           // to ask permission for yet — the only approval is the passkey, and that is
           // requested later, in the traveller's own thread, once there is an amount.

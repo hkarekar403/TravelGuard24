@@ -71,6 +71,31 @@ export interface InboundChannel {
  * Separate from the channel so the same guarantee is testable on its own, and so a
  * channel implementation cannot accidentally forget it.
  */
+/**
+ * Masks a traveller's contact for display: `+61466910292` → `••• 0292`.
+ *
+ * The full value is needed to send a reply and stays server-side. The browser only ever
+ * receives the masked form, so it cannot appear in a screenshot, a screen recording, or a
+ * shared debugging session — a real mobile number was legible in a submission screenshot
+ * before this existed.
+ *
+ * The last four digits are kept because they are what lets a human confirm the right person
+ * was contacted, which is the only reason the field is on screen at all. Same reasoning as
+ * showing a card's last four rather than the PAN: identify, don't disclose.
+ *
+ * Values that are not contacts — a demo channel's label, say — are returned unchanged;
+ * masking them would be noise, and there is nothing to protect.
+ */
+export function maskContact(value: string): string {
+  const at = value.indexOf('@');
+  if (at > 0) return `${value.slice(0, 1)}•••${value.slice(at)}`;
+
+  const digits = value.replace(/\D/g, '');
+  if (digits.length >= 7) return `••• ${digits.slice(-4)}`;
+
+  return value;
+}
+
 export function createSeenSet(): { seen(id: string): boolean; mark(id: string): void } {
   const ids = new Set<string>();
   return {
