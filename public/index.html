@@ -353,7 +353,14 @@ new EventSource('/events').onmessage = (m) => {
          ${i.statedBudget?`<tr><td></td><td class="lbl">traveller's budget</td><td>${i.statedBudget} <span class="meta">— a preference, not the policy</span></td></tr>`:''}
        </table>
        ${e.derivedCabin?`<div class="why">Cabin not stated — policy permits ${esc(String(e.derivedCabin).replace('_',' '))} only, so it is the only bookable option. Deduced from the policy, not assumed.</div>`:''}`;
-    close('read', `${i.origin}→${i.destination} · ${cab}`);
+    // The traveller's claimed budget goes in the SUMMARY, not the table above.
+    //
+    // `close(id, summary)` clears the step body — that is how nine steps fit on one screen
+    // without the confirmed block scrolling. So the table is wiped in the same tick it is
+    // written and has never actually been seen. The claim has to live in the line that
+    // survives, which is also the line that stays on screen next to the policy cap in
+    // column A — and the two side by side is the whole point of capturing it.
+    close('read', `${i.origin}→${i.destination} · ${cab}${i.statedBudget ? ` · traveller claims ${Number(i.statedBudget).toLocaleString('en-AU')}` : ''}`);
   }
 
   /* Refused before any vendor was contacted, because part of the request was never said.
