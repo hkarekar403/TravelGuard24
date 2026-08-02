@@ -259,11 +259,26 @@ selected — this is correct, not a defect.
 A demo control deliberately alters the credential presented to the acquiring step. **It is
 labelled on screen**, because a rejection with no visible cause proves nothing.
 
-**Arm:**
-```bash
-curl -X POST http://localhost:3000/tamper -H "Content-Type: application/json" -d "{\"mode\":\"amount\"}"
+**Arm — PowerShell (Windows):**
+```powershell
+Invoke-RestMethod -Uri http://localhost:3000/tamper -Method Post -ContentType 'application/json' -Body '{"mode":"amount"}'
 ```
+
+**Arm — bash / macOS / Linux:**
+```bash
+curl -X POST http://localhost:3000/tamper -H "Content-Type: application/json" -d '{"mode":"amount"}'
+```
+
 Modes: `none` · `amount` · `merchant` · `replay`. Returns the armed mode.
+
+> ⚠️ **In PowerShell, `curl` is an alias for `Invoke-WebRequest`** and does not accept `-H`
+> or `-d` — it fails with *"Cannot bind parameter 'Headers'"*. Use `Invoke-RestMethod` as
+> above, or call `curl.exe` explicitly to bypass the alias.
+
+**Or, on camera, use the labelled buttons** in the compose sheet (**New instruction** →
+`tamper the credential:` `off` · `amount` · `merchant` · `replay`). Clicking arms it
+server-side immediately, so you can then **Cancel** the sheet and send the real message.
+Filming the click is the point — a rejection with a visible cause proves the check is real.
 
 > ⚠️ **Always disarm afterwards** with `{"mode":"none"}`. It is a server-side global and
 > persists until changed or the server restarts. Forgetting this makes the *next* booking
