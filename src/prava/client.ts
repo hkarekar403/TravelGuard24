@@ -129,7 +129,13 @@ export function createPravaClient(opts: PravaClientOptions): PravaPort {
         product_statuses: [
           {
             product_ref_id: credential.productRefId,
-            status: status === 'APPROVED' ? 'COMPLETED' : 'CANCELLED',
+            // `CANCELED`, one L. Prava's enum uses the American spelling and rejects the
+            // British one outright:
+            //   Expected 'COMPLETED' | 'FAILED' | 'CANCELED' | 'INPROGRESS' | 'PENDING'
+            //   | 'ONHOLD', received 'CANCELLED'
+            // Only reachable on the DECLINED branch, which is why every approved run
+            // worked and this survived until the first rejection was executed.
+            status: status === 'APPROVED' ? 'COMPLETED' : 'CANCELED',
           },
         ],
         txn_ref_id: credential.txnRefId,

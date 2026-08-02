@@ -260,14 +260,33 @@ export async function bookTrip(req: BookingRequest, deps: Dependencies): Promise
   });
 
   if (!redemption.accepted) {
-    // I3. Report the truth to the network, then stop. Reporting DECLINED closes the
-    // mandate rather than leaving live credentials outstanding.
-    await prava.reportStatus(session.sessionId, credential, 'DECLINED');
+    // RECORD FIRST, THEN REPORT — the ordering matters and was originally the other way
+    // round. A vendor error on the report threw, and the refusal was lost: no audit entry,
+    // no reply to the traveller, nothing but a stack trace. For a log whose entire claim is
+    // that a refusal is evidence rather than a non-event, losing the record of a refusal
+    // because someone else's API rejected our spelling is the worst possible failure.
+    //
+    // The decision is ours and is final the moment it is made. Reporting it is a courtesy
+    // to the network, and it cannot retroactively make the payment acceptable.
     audit.append('REDEMPTION_REJECTED', {
       sessionId: session.sessionId,
       pnr: order.bookingReference,
       checks: redemption.checks,
     });
+
+    // I3. Tell the network the truth, closing the mandate rather than leaving live
+    // credentials outstanding. Swallowed on failure: the credential was refused either
+    // way, and throwing here would deny the traveller the outcome they need to hear.
+    try {
+      await prava.reportStatus(session.sessionId, credential, 'DECLINED');
+    } catch (err) {
+      audit.append('REPORT_FAILED', {
+        sessionId: session.sessionId,
+        pnr: order.bookingReference,
+        error: err instanceof Error ? err.message : String(err),
+      });
+    }
+
     // I4. Airline is never paid.
     return { status: 'REDEMPTION_REJECTED', pnr: order.bookingReference, sessionId: session.sessionId, redemption };
   }

@@ -383,6 +383,35 @@ describe('I3 — report-status APPROVED only after our own enforcement passes', 
     expect(auditTypes(calls)).toContain('REDEMPTION_REJECTED');
   });
 
+  /**
+   * Found live: reporting DECLINED threw a 400 (a spelling difference in a vendor enum),
+   * and because the audit entry was written AFTER that call, the refusal vanished — no
+   * record, no reply, just a stack trace. A log whose claim is that a refusal is evidence
+   * cannot lose refusals when someone else's API rejects our request.
+   */
+  it('records the refusal even when telling the network about it fails', async () => {
+    const { calls, deps, request } = harness({
+      redemption: {
+        accepted: false,
+        checks: [{ check: 'amount_matches_mandate', passed: false, observed: '9999.00', expected: '1202.75' }],
+      },
+    });
+
+    deps.prava.reportStatus = async () => {
+      throw new Error('Prava 400: Invalid request body');
+    };
+
+    const outcome = await bookTrip(request, deps);
+
+    expect(outcome.status).toBe('REDEMPTION_REJECTED');
+    // The decision is ours and survives the vendor failing to acknowledge it.
+    expect(auditTypes(calls)).toContain('REDEMPTION_REJECTED');
+    // And the failure to report is itself recorded rather than swallowed silently.
+    expect(auditTypes(calls)).toContain('REPORT_FAILED');
+    // I4 still holds: a failed report must never result in the airline being paid.
+    expect(calls.payFromBalance).toHaveLength(0);
+  });
+
   it('runs enforcement before reporting, not after', async () => {
     const { calls, deps, request } = harness();
 

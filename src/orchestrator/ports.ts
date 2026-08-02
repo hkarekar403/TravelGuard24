@@ -166,6 +166,8 @@ export type AuditEventType =
   | 'HOLD_CREATED'
   | 'MANDATE_REQUESTED'
   | 'REDEMPTION_REJECTED'
+  /** The refusal was made and recorded, but telling the network about it failed. */
+  | 'REPORT_FAILED'
   | 'PAYMENT_APPROVED'
   | 'SETTLEMENT_FAILED'
   | 'TICKET_ISSUED';
