@@ -61,7 +61,14 @@ export function inMemorySeenStore(): SeenCredentialStore {
  *    its own — pairing it with the token is what makes it discriminating.
  */
 function replayKeys(c: PaymentCredential): string[] {
-  return [`txn:${c.txnRefId}`, `cred:${c.token}:${c.dynamicCvv}`];
+  // The credential key is HASHED, not stored raw.
+  //
+  // A dynamic CVV is a one-time cryptogram, but it is still an authentication value, and
+  // PCI DSS is unambiguous that authentication data must not be retained after
+  // authorisation. Keeping `token:cvv` in a Set for the life of the process is retention,
+  // even though it never reaches disk or a log. SHA-256 dedupes exactly as well — the input
+  // is what must be unique, not the stored form — while leaving nothing replayable behind.
+  return [`txn:${c.txnRefId}`, `cred:${createHash('sha256').update(`${c.token}:${c.dynamicCvv}`).digest('hex')}`];
 }
 
 /**
