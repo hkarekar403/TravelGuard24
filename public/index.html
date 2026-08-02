@@ -351,9 +351,31 @@ new EventSource('/events').onmessage = (m) => {
          <tr><td></td><td class="lbl">dates</td><td>${i.departureDate} → ${i.returnDate}</td></tr>
          <tr><td></td><td class="lbl">cabin</td><td><b>${cab}</b></td></tr>
          ${i.statedBudget?`<tr><td></td><td class="lbl">traveller's budget</td><td>${i.statedBudget} <span class="meta">— a preference, not the policy</span></td></tr>`:''}
-       </table>
-       ${i.assumptions.length?`<div class="why">Assumed: ${i.assumptions.join(' · ')}</div>`:''}`;
+       </table>`;
     close('read', `${i.origin}→${i.destination} · ${cab}`);
+  }
+
+  /* Refused before any vendor was contacted, because part of the request was never said.
+     This is the earliest of the three refusal points and the only one that reaches nothing
+     at all — no search, no gate, no audit entry, because nothing was decided about a
+     purchase. Styled as a decision, like the blocked screen, not as an error. */
+  if(e.type==='unclear'){
+    const LBL={origin:'where you are flying from',destination:'where you are flying to',
+               dates:'both travel dates',cabin:'the cabin'};
+    const h=e.heard||{};
+    const got=[];
+    if(h.origin||h.destination) got.push(`route ${h.origin||'?'} → ${h.destination||'?'}`);
+    if(h.departureDate) got.push(`dates ${h.departureDate} → ${h.returnDate||'?'}`);
+    if(h.cabinClass) got.push(`cabin ${String(h.cabinClass).replace('_',' ')}`);
+    body('read').innerHTML =
+      `<div class="verdict"><span class="tag no">Incomplete request</span></div>
+       <div class="tick" style="color:var(--warn)">Missing <b>${e.missing.map(m=>esc(LBL[m]||m)).join('</b>, <b>')}</b></div>
+       ${got.length?`<div class="why">Heard: ${esc(got.join(' · '))}</div>`:''}
+       <div class="banner"><b>Nothing was searched.</b> The agent did not fill the gaps with
+         defaults — it asked the traveller to state the request again in full.</div>`;
+    // No summary argument: passing one collapses the step and clears the body, and this
+    // body IS the message. `stop` only changes the marker to `!`.
+    close('read', undefined, 'stop');
   }
 
   /* Acknowledged before anything is searched. It asks for nothing — looking is free — but

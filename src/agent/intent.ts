@@ -28,12 +28,29 @@ export type TripIntent = {
    * decides what is allowed, the traveller only expresses a preference.
    */
   statedBudget?: string;
-  /** What the agent could not determine and had to assume. Shown, never hidden. */
-  assumptions: string[];
 };
 
+export type MissingField = 'origin' | 'destination' | 'dates' | 'cabin';
+
+/**
+ * The parse either yielded a complete instruction or it did not. There is no third state.
+ *
+ * WHY THERE ARE NO DEFAULTS ANY MORE — this replaced a version that filled the gaps and
+ * disclosed the guesses in an "assumptions" line. Dictation made the cost of that obvious:
+ * a message containing only dates was completed into a Sydney→London economy trip, priced,
+ * and offered for passkey approval. The traveller was one tap from paying for a route they
+ * had never named. A disclosure the agent prints to itself is not consent.
+ *
+ * So a `TripIntent` can no longer be constructed with a field nobody supplied — the type is
+ * what enforces it, not a convention. Anything missing means the request is returned to the
+ * human to state again in full.
+ */
+export type ParseResult =
+  | { complete: true; intent: TripIntent }
+  | { complete: false; missing: MissingField[]; heard: Partial<TripIntent> };
+
 export interface IntentParser {
-  parse(instruction: string): Promise<TripIntent>;
+  parse(instruction: string): Promise<ParseResult>;
 }
 
 // ---------------------------------------------------------------------------
@@ -60,15 +77,39 @@ const CABIN_WORDS: Array<[RegExp, CabinClass]> = [
   [/\beconomy\b/i, 'economy'],
 ];
 
-const DEFAULTS = {
-  origin: 'SYD',
-  destination: 'LHR',
-  departureDate: '2026-09-15',
-  returnDate: '2026-09-25',
-  cabinClass: 'economy' as CabinClass,
+const pad = (n: number) => String(n).padStart(2, '0');
+
+/**
+ * Spoken ordinals → digits: "third" → "3th", "twenty fifth" → "25th".
+ *
+ * Dictation writes these as words — *"returning back on third October"* — where a keyboard
+ * writes "3rd". Without this the date is simply not found.
+ *
+ * APPLIED ONLY TO DATE PARSING, never to the whole instruction: "first class" would become
+ * "1th class" and the cabin would stop being recognised. The suffix is always "th" because
+ * the day pattern accepts any of st/nd/rd/th and nothing renders this text.
+ */
+const ORDINAL_WORDS: Record<string, number> = {
+  first: 1, second: 2, third: 3, fourth: 4, fifth: 5, sixth: 6, seventh: 7, eighth: 8,
+  ninth: 9, tenth: 10, eleventh: 11, twelfth: 12, thirteenth: 13, fourteenth: 14,
+  fifteenth: 15, sixteenth: 16, seventeenth: 17, eighteenth: 18, nineteenth: 19,
+  twentieth: 20, thirtieth: 30,
 };
 
-const pad = (n: number) => String(n).padStart(2, '0');
+const ONES = 'first|second|third|fourth|fifth|sixth|seventh|eighth|ninth';
+
+export function normaliseSpokenOrdinals(text: string): string {
+  return text
+    // Compound first, or "twenty" would be consumed alone: "twenty fifth", "thirty-first".
+    .replace(new RegExp(String.raw`\b(twenty|thirty)[\s-](${ONES})\b`, 'gi'), (_m, tens: string, ones: string) => {
+      const base = tens.toLowerCase() === 'twenty' ? 20 : 30;
+      return `${base + (ORDINAL_WORDS[ones.toLowerCase()] ?? 0)}th`;
+    })
+    .replace(new RegExp(String.raw`\b(${Object.keys(ORDINAL_WORDS).join('|')})\b`, 'gi'), (m) => {
+      const n = ORDINAL_WORDS[m.toLowerCase()];
+      return n === undefined ? m : `${n}th`;
+    });
+}
 
 /**
  * Resolves the route.
@@ -209,18 +250,13 @@ export function createMockIntentParser(opts: { year?: number } = {}): IntentPars
   const year = opts.year ?? 2026;
 
   return {
-    async parse(instruction: string): Promise<TripIntent> {
-      const assumptions: string[] = [];
-
+    async parse(instruction: string): Promise<ParseResult> {
       const { origin, destination } = findRoute(instruction);
-      if (!origin) assumptions.push(`origin not stated — assumed ${DEFAULTS.origin}`);
-      if (!destination) assumptions.push(`destination not stated — assumed ${DEFAULTS.destination}`);
 
-      const { departureDate, returnDate } = findDates(instruction, year);
-      if (!departureDate) assumptions.push(`dates not stated — assumed ${DEFAULTS.departureDate} to ${DEFAULTS.returnDate}`);
+      // Ordinals are spelled out only for the date pass — see `normaliseSpokenOrdinals`.
+      const { departureDate, returnDate } = findDates(normaliseSpokenOrdinals(instruction), year);
 
       const cabin = CABIN_WORDS.find(([re]) => re.test(instruction))?.[1];
-      if (!cabin) assumptions.push('cabin not stated — assumed economy');
 
       // The traveller's own number, kept separate from the policy cap on purpose.
       //
@@ -233,14 +269,41 @@ export function createMockIntentParser(opts: { year?: number } = {}): IntentPars
       );
       const statedBudget = budget?.[1]?.replace(/,/g, '');
 
+      // Reported in the order a person would say them, so the message back reads naturally.
+      const missing: MissingField[] = [];
+      if (!origin) missing.push('origin');
+      if (!destination) missing.push('destination');
+      if (!departureDate || !returnDate) missing.push('dates');
+      if (!cabin) missing.push('cabin');
+
+      if (missing.length > 0) {
+        // What WAS understood is returned so the screen can show the agent heard something
+        // rather than nothing — but it is a `Partial`, and nothing downstream can mistake
+        // it for an instruction.
+        return {
+          complete: false,
+          missing,
+          heard: {
+            ...(origin ? { origin } : {}),
+            ...(destination ? { destination } : {}),
+            ...(departureDate ? { departureDate } : {}),
+            ...(returnDate ? { returnDate } : {}),
+            ...(cabin ? { cabinClass: cabin } : {}),
+            ...(statedBudget ? { statedBudget } : {}),
+          },
+        };
+      }
+
       return {
-        origin: origin ?? DEFAULTS.origin,
-        destination: destination ?? DEFAULTS.destination,
-        departureDate: departureDate ?? DEFAULTS.departureDate,
-        returnDate: returnDate ?? DEFAULTS.returnDate,
-        cabinClass: cabin ?? DEFAULTS.cabinClass,
-        ...(statedBudget ? { statedBudget } : {}),
-        assumptions,
+        complete: true,
+        intent: {
+          origin: origin!,
+          destination: destination!,
+          departureDate: departureDate!,
+          returnDate: returnDate!,
+          cabinClass: cabin!,
+          ...(statedBudget ? { statedBudget } : {}),
+        },
       };
     },
   };

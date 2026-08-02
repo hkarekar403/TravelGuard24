@@ -15,7 +15,7 @@ import { spawn } from 'node:child_process';
 import { loadConfig, loadEnvFile } from '../config.js';
 import { createDemoChannel } from '../channel/demo.js';
 import { createLinqChannel } from '../channel/linq.js';
-import { composeAck, composeApproval, composeReply } from '../channel/outcome.js';
+import { composeAck, composeApproval, composeReply, composeUnclear } from '../channel/outcome.js';
 import type { InboundChannel, InboundRequest } from '../channel/types.js';
 import { createDuffelClient } from '../duffel/client.js';
 import { createPravaClient } from '../prava/client.js';
@@ -197,7 +197,23 @@ async function runBooking(request: InboundRequest, tamper: TamperMode): Promise<
     // parse yields a TripIntent and the rules come from policy.json, server-side.
     const instruction = request.text;
     emit({ type: 'instructed', text: instruction });
-    const intent = await intentParser.parse(instruction);
+    const parsed = await intentParser.parse(instruction);
+
+    // An incomplete request is REFUSED, not completed with defaults.
+    //
+    // This is the earliest of the three refusal points and the only one that never reaches
+    // a vendor: no search, no gate, no audit entry, because nothing was decided about a
+    // purchase. It exists because the opposite behaviour was one passkey tap away from
+    // charging a traveller for a route they never named.
+    if (!parsed.complete) {
+      const text = composeUnclear(parsed.missing);
+      emit({ type: 'unclear', missing: parsed.missing, heard: parsed.heard, text });
+      await replyTo(request).reply(request.threadId, text);
+      emit({ type: 'finished', status: 'REQUEST_INCOMPLETE', detail: { missing: parsed.missing } });
+      return;
+    }
+
+    const intent = parsed.intent;
     emit({ type: 'understood', intent });
 
     // Acknowledge before searching. The traveller has just messaged a number and would

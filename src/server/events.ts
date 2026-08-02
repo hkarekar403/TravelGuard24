@@ -7,7 +7,7 @@
  */
 
 import type { Evaluate, PolicyDecision } from '../policy/types.js';
-import type { TripIntent } from '../agent/intent.js';
+import type { MissingField, TripIntent } from '../agent/intent.js';
 import type { ChannelKind, InboundRequest } from '../channel/types.js';
 import type {
   AuditEventType,
@@ -31,6 +31,8 @@ export type UiEvent =
     }
   | { type: 'instructed'; text: string }
   | { type: 'understood'; intent: TripIntent }
+  /** Refused before any vendor was contacted: part of the request was never said. */
+  | { type: 'unclear'; missing: MissingField[]; heard: Partial<TripIntent>; text: string }
   | { type: 'searching'; query: SearchRequest }
   | { type: 'searched'; offers: number; carriers: number; ms: number }
   | { type: 'decided'; decision: PolicyDecision }

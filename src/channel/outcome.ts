@@ -22,7 +22,7 @@
 
 import type { BookingOutcome } from '../orchestrator/orchestrator.js';
 import type { PolicyDecision, RuleId } from '../policy/types.js';
-import type { TripIntent } from '../agent/intent.js';
+import type { MissingField, TripIntent } from '../agent/intent.js';
 
 const RULE_LABEL: Record<RuleId, string> = {
   cabin_class: 'cabin class',
@@ -100,8 +100,38 @@ export function composeAck(intent: TripIntent, opts: { org?: string } = {}): str
       `${plainDate(intent.departureDate)} to ${plainDate(intent.returnDate)}, ` +
       `${intent.cabinClass.replace('_', ' ')}.`,
   ];
-  if (intent.assumptions.length) lines.push(`You didn't say: ${intent.assumptions.join('; ')}.`);
   lines.push(`Checking every fare against ${org} travel policy. Nothing is paid until you approve.`);
+  return lines.join('\n');
+}
+
+const MISSING_LABEL: Record<MissingField, string> = {
+  origin: 'where you are flying from',
+  destination: 'where you are flying to',
+  dates: 'both travel dates',
+  cabin: 'the cabin — economy or business',
+};
+
+/**
+ * The request could not be acted on, because part of it was never said.
+ *
+ * This message exists because the alternative was worse. The agent used to fill gaps with
+ * defaults and disclose them in a line of small print — and a dictated message containing
+ * only dates became a priced Sydney→London trip awaiting a passkey. The traveller was one
+ * tap from paying for a route they had never mentioned.
+ *
+ * It asks for the WHOLE request again rather than only the missing part: a half-remembered
+ * follow-up is how a wrong date gets attached to a right route, and there is no conversation
+ * state to attach a correction to. Nothing was searched, so there is nothing to preserve.
+ */
+export function composeUnclear(missing: MissingField[], opts: { heardRoute?: string } = {}): string {
+  const lines = ["I couldn't act on that — some of it didn't come through."];
+  lines.push('');
+  lines.push(`I still need: ${missing.map((m) => MISSING_LABEL[m]).join(', ')}.`);
+  lines.push('');
+  lines.push(
+    'Send the whole request again — typed or dictated — with the route, both dates and the cabin. ' +
+      'I did not search anything and nothing was charged.',
+  );
   return lines.join('\n');
 }
 
