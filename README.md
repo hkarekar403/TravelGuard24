@@ -295,6 +295,15 @@ which stays watched either way.
 
 Stated rather than discovered:
 
+- **One traveller, not many.** The Prava customer, the card and the passenger details are
+  fixed to a single demo traveller. In a real deployment all three come from a traveller
+  profile keyed to the sender — each employee being their own Prava customer, with their own
+  enrolled card and their own passkey, and the card resolved per traveller rather than
+  configured. `PRAVA_CARD_ID` exists because this demo customer has two cards enrolled and
+  the older one's network token died mid-event; without the pin the checkout offers the dead
+  card. It is a workaround for that, not a position on how identity should work. What it
+  would take: the profile lookup is small, but every traveller needs a one-time enrolment on
+  their own device, which is not something a weekend can fake.
 - **No exception/override path.** Real corporate policy has one. Ours does not, and the UI
   says so on screen.
 - **No re-search with relaxed constraints** when blocked. Showing the nearest miss is v1;
