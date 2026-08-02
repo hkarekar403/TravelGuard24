@@ -14,6 +14,14 @@ tamper-evident audit entry either way.
 
 The blocked path is not the error case. It is the product.
 
+**▶ Demo video — [youtu.be/UQTnfvQ5KaU](https://youtu.be/UQTnfvQ5KaU)**
+A refusal and a booking, both against live airline inventory, driven from a phone.
+
+**Try the policy gate yourself — [travelguard24.onrender.com](https://travelguard24.onrender.com)**
+Live search and the full policy decision, with the payment path disabled: the hosted instance
+holds no payment credentials, so it decides and stops. The booking half is in the video.
+It sleeps when idle, so the first load can take up to a minute.
+
 ---
 
 ## The problem
