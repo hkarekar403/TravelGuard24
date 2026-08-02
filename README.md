@@ -296,6 +296,59 @@ Stated rather than discovered:
 
 ---
 
+## Compliance posture
+
+A project about enforcing compliance should be precise about its own. **Nothing here is
+"compliant"** — compliance is an audited assertion about an operating organisation, not a
+property of a codebase. What follows is what the architecture actually does, and what it
+does not.
+
+### PCI DSS — the scope is deliberately near-zero
+
+**TravelGuard24 never touches a PAN.** Card entry happens entirely inside Prava's iframe on
+Prava's domain; Prava holds PCI DSS Level 2 / SAQ-D and vaults with Skyflow (Level 1). We
+don't host a payment page — the traveller receives a link. In a production deployment that
+is SAQ A territory: fully outsourced cardholder data handling, no payment page of ours in
+the flow at all.
+
+What we *do* receive is a **network token plus a dynamic CVV**. A network token is a
+domain-restricted surrogate we cannot de-tokenize, so it generally falls outside PCI scope
+for a token consumer — but token plus cryptogram is *transactable*, so it is handled as
+though it were a PAN:
+
+- **Never persisted.** Nothing is written to disk at runtime, at all.
+- **Never logged.** The CLI prints credential *lengths*, never values.
+- **Never sent to the browser.** Verified against captured event streams from real
+  transactions, not by reading the code.
+- **Never retained to detect its own reuse.** Replay detection keys on a SHA-256 of
+  `token:dynamic_cvv`, because uniqueness is a property of the input, not of the stored
+  form. Authentication data is not kept after authorisation — and in-memory is still kept.
+- **Redacted from the audit record** at any depth, by key name.
+- **Zero runtime dependencies**, so there is no supply chain to compromise.
+
+**Gaps, stated rather than discovered:** no authentication on the console, no key
+management, no network segmentation, no monitoring or alerting.
+
+### SOC 2 — one criterion is strong, the rest are honest gaps
+
+| Criterion | Position |
+|---|---|
+| **Processing Integrity** | **Strong, and it is the product.** "Complete, valid, accurate, timely, authorised" describes the policy gate, the mandate lock, the redemption checks and the hash chain almost verbatim. |
+| **Confidentiality** | Good. Credentials never persisted, logged, or transmitted to the client. |
+| **Security** | Partial. Loopback-only binding and zero dependencies help; there is no authn/authz, monitoring, or incident response. |
+| **Availability** | Not addressed. Single process, in-memory state, no HA. One abandoned checkout blocks the agent for 14 minutes. |
+| **Privacy** | The real gap. Passenger name, date of birth, email and phone are transmitted to Duffel with no retention policy, deletion path, or consent record. |
+
+### SOC 1 — applicable in production, and it points at the same gap
+
+A travel management company's spend flows directly into its clients' expense and financial
+records, so enterprise buyers would ask for SOC 1 Type II. **The audit log is exactly the
+control such a report describes** — and two known limitations currently disqualify it: the
+chain is in-memory, so it does not survive the process, and a hash chain proves *ordering
+and integrity, not authorship*. Durable append-only storage and signing are the work that
+closes both, and they are the same work required to answer an audit question raised months
+after the booking.
+
 ## Where this goes next
 
 - **Re-run the gate on airline-initiated changes.** If a carrier reschedules a booked
