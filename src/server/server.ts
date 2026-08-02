@@ -26,7 +26,7 @@ import { evaluate } from '../policy/engine.js';
 import { createSensoClient, resolvePolicy } from '../policy/senso.js';
 import type { Policy } from '../policy/types.js';
 import type { Clock } from '../orchestrator/ports.js';
-import { createMockIntentParser } from '../agent/intent.js';
+import { completeWithPolicyCabin, createMockIntentParser } from '../agent/intent.js';
 import {
   applyTamper,
   isTamperMode,
@@ -197,7 +197,13 @@ async function runBooking(request: InboundRequest, tamper: TamperMode): Promise<
     // parse yields a TripIntent and the rules come from policy.json, server-side.
     const instruction = request.text;
     emit({ type: 'instructed', text: instruction });
-    const parsed = await intentParser.parse(instruction);
+    // An unstated cabin is deduced from the policy when the policy permits exactly one —
+    // asking the traveller to name the only legal option is asking them to recite the
+    // policy. Anything genuinely ambiguous is still asked for. See `completeWithPolicyCabin`.
+    const { result: parsed, derivedCabin } = completeWithPolicyCabin(
+      await intentParser.parse(instruction),
+      policy.allowedCabinClasses,
+    );
 
     // An incomplete request is REFUSED, not completed with defaults.
     //
@@ -214,12 +220,12 @@ async function runBooking(request: InboundRequest, tamper: TamperMode): Promise<
     }
 
     const intent = parsed.intent;
-    emit({ type: 'understood', intent });
+    emit({ type: 'understood', intent, ...(derivedCabin ? { derivedCabin } : {}) });
 
     // Acknowledge before searching. The traveller has just messaged a number and would
     // otherwise hear nothing for twenty seconds — and restating the interpretation is how
     // they catch a misread before it costs anything. It asks for nothing: looking is free.
-    const ack = composeAck(intent, { org: policy.org });
+    const ack = composeAck(intent, { org: policy.org, derivedCabin });
     await replyTo(request).reply(request.threadId, ack);
     emit({ type: 'acknowledged', text: ack });
 

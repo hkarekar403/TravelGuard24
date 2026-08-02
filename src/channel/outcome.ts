@@ -93,13 +93,25 @@ function blockedText(decision: PolicyDecision, org: string): string {
  * messaged a number and would otherwise hear nothing for twenty seconds, and because
  * restating the interpretation is how they catch a misread before it matters.
  */
-export function composeAck(intent: TripIntent, opts: { org?: string } = {}): string {
+export function composeAck(
+  intent: TripIntent,
+  opts: { org?: string; derivedCabin?: string | null } = {},
+): string {
   const org = opts.org ? `${opts.org}'s` : 'your';
   const lines = [
     `Got it — ${intent.origin} to ${intent.destination}, ` +
       `${plainDate(intent.departureDate)} to ${plainDate(intent.returnDate)}, ` +
       `${intent.cabinClass.replace('_', ' ')}.`,
   ];
+  // Said out loud rather than applied silently. The traveller never named a cabin; the
+  // policy permits exactly one, so it was deduced rather than guessed — and they should be
+  // told which, in case that is not the trip they meant.
+  if (opts.derivedCabin) {
+    lines.push(
+      `You didn't say a cabin — ${opts.org ?? 'the'} policy permits ` +
+        `${opts.derivedCabin.replace('_', ' ')} only, so that is the only bookable option.`,
+    );
+  }
   lines.push(`Checking every fare against ${org} travel policy. Nothing is paid until you approve.`);
   return lines.join('\n');
 }

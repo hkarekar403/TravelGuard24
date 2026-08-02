@@ -351,7 +351,8 @@ new EventSource('/events').onmessage = (m) => {
          <tr><td></td><td class="lbl">dates</td><td>${i.departureDate} → ${i.returnDate}</td></tr>
          <tr><td></td><td class="lbl">cabin</td><td><b>${cab}</b></td></tr>
          ${i.statedBudget?`<tr><td></td><td class="lbl">traveller's budget</td><td>${i.statedBudget} <span class="meta">— a preference, not the policy</span></td></tr>`:''}
-       </table>`;
+       </table>
+       ${e.derivedCabin?`<div class="why">Cabin not stated — policy permits ${esc(String(e.derivedCabin).replace('_',' '))} only, so it is the only bookable option. Deduced from the policy, not assumed.</div>`:''}`;
     close('read', `${i.origin}→${i.destination} · ${cab}`);
   }
 

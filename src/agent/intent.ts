@@ -53,6 +53,58 @@ export interface IntentParser {
   parse(instruction: string): Promise<ParseResult>;
 }
 
+const CABINS: readonly CabinClass[] = ['economy', 'premium_economy', 'business', 'first'];
+const isCabin = (v: string): v is CabinClass => (CABINS as readonly string[]).includes(v);
+
+/**
+ * Resolves an unstated cabin from the policy — but only when the policy leaves exactly one
+ * possibility.
+ *
+ * This is DEDUCTION, not a default. If the policy permits economy only, there is precisely
+ * one cabin the agent could ever book, so requiring the traveller to name it is asking them
+ * to recite the policy back. If the policy permits two or more, the choice is genuinely
+ * ambiguous and is asked for, exactly like a missing route.
+ *
+ * The parser is deliberately left honest — it still reports `cabin` as missing, because it
+ * has no business knowing the policy. The resolution happens here, where the policy is
+ * known, and is surfaced to the traveller rather than applied silently.
+ */
+export function completeWithPolicyCabin(
+  result: ParseResult,
+  allowedCabins: readonly string[],
+): { result: ParseResult; derivedCabin: CabinClass | null } {
+  if (result.complete) return { result, derivedCabin: null };
+  if (!result.missing.includes('cabin')) return { result, derivedCabin: null };
+
+  const only = allowedCabins.length === 1 ? allowedCabins[0] : undefined;
+  if (!only || !isCabin(only)) return { result, derivedCabin: null };
+
+  const missing = result.missing.filter((m) => m !== 'cabin');
+  const heard = { ...result.heard, cabinClass: only };
+
+  // Everything else was present, so the request is now actionable.
+  if (missing.length === 0) {
+    return {
+      result: {
+        complete: true,
+        intent: {
+          origin: heard.origin!,
+          destination: heard.destination!,
+          departureDate: heard.departureDate!,
+          returnDate: heard.returnDate!,
+          cabinClass: only,
+          ...(heard.statedBudget ? { statedBudget: heard.statedBudget } : {}),
+        },
+      },
+      derivedCabin: only,
+    };
+  }
+
+  // Still incomplete for other reasons — but do not ask for the cabin, since the policy
+  // has already determined it.
+  return { result: { complete: false, missing, heard }, derivedCabin: only };
+}
+
 // ---------------------------------------------------------------------------
 
 const AIRPORTS: Record<string, string> = {

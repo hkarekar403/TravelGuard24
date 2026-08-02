@@ -30,7 +30,7 @@ export type UiEvent =
       error?: string;
     }
   | { type: 'instructed'; text: string }
-  | { type: 'understood'; intent: TripIntent }
+  | { type: 'understood'; intent: TripIntent; derivedCabin?: string }
   /** Refused before any vendor was contacted: part of the request was never said. */
   | { type: 'unclear'; missing: MissingField[]; heard: Partial<TripIntent>; text: string }
   | { type: 'searching'; query: SearchRequest }

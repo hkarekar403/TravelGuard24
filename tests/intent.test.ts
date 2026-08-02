@@ -7,7 +7,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { createMockIntentParser } from '../src/agent/intent.js';
+import { completeWithPolicyCabin, createMockIntentParser } from '../src/agent/intent.js';
 
 const parser = createMockIntentParser({ year: 2026 });
 
@@ -167,6 +167,43 @@ describe('an incomplete request is refused, never completed', () => {
       expect(r.heard.departureDate).toBe('2026-09-25');
       expect(r.heard.origin).toBeUndefined();
     }
+  });
+
+  // Deduction, not a default: with an economy-only policy there is exactly one cabin the
+  // agent could ever book, so requiring the traveller to name it asks them to recite the
+  // policy. Two or more permitted cabins is genuinely ambiguous and is still asked for.
+  it('derives the cabin when the policy permits exactly one', async () => {
+    const r = await parser.parse('Get me a return ticket from Sydney to London 28 September to 5th October');
+    const { result, derivedCabin } = completeWithPolicyCabin(r, ['economy']);
+    expect(derivedCabin).toBe('economy');
+    expect(result.complete).toBe(true);
+    if (result.complete) {
+      expect(result.intent.cabinClass).toBe('economy');
+      expect([result.intent.departureDate, result.intent.returnDate]).toEqual(['2026-09-28', '2026-10-05']);
+    }
+  });
+
+  it('still asks for the cabin when the policy permits more than one', async () => {
+    const r = await parser.parse('Get me a return ticket from Sydney to London 28 September to 5th October');
+    const { result, derivedCabin } = completeWithPolicyCabin(r, ['economy', 'premium_economy']);
+    expect(derivedCabin).toBeNull();
+    expect(result.complete).toBe(false);
+    if (!result.complete) expect(result.missing).toEqual(['cabin']);
+  });
+
+  it('does not ask for a cabin the policy has already determined, but still asks for the rest', async () => {
+    const r = await parser.parse('25th of September to 28 September');
+    const { result } = completeWithPolicyCabin(r, ['economy']);
+    expect(result.complete).toBe(false);
+    if (!result.complete) expect(result.missing).toEqual(['origin', 'destination']);
+  });
+
+  it('never overrides a cabin the traveller actually stated', async () => {
+    const r = await parser.parse('Book me business class Sydney to London, 25 Sept to 28 Sept');
+    const { result, derivedCabin } = completeWithPolicyCabin(r, ['economy']);
+    expect(derivedCabin).toBeNull();
+    expect(result.complete).toBe(true);
+    if (result.complete) expect(result.intent.cabinClass).toBe('business');
   });
 
   it('accepts a request that names everything', async () => {
