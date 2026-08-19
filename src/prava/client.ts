@@ -80,31 +80,45 @@ export function createPravaClient(opts: PravaClientOptions): PravaPort {
         // The real lesson from that episode stands: a 201 here says nothing about whether
         // a human can complete the checkout. Verify payment changes in a browser.
         ...(req.cardId ? { card: { card_id: req.cardId } } : {}),
-        purchase_context: [
-          {
-            effective_until_minutes: opts.effectiveUntilMinutes ?? 30,
-            merchant_details: {
-              country_code_iso2: opts.merchantCountry,
-              url: opts.merchantUrl,
-              // TravelGuard24 is the travel-seller of record under the TMC model: it
-              // charges the traveller and settles with the carrier itself.
-              name: opts.merchantName,
-              category_code: '4722',
-              category: 'Travel Agency',
-            },
-            // Only ONE purchase_context entry is supported — multi-merchant baskets
-            // are not expressible in a single session.
-            product_details: [
-              {
-                quantity: 1,
-                description: req.description,
-                // The Duffel PNR. Comes back as `external_product_id`.
-                product_id: req.productId,
-                unit_price: req.totalAmount,
+        // `purchase_context` is an OBJECT, not an array.
+        //
+        // It was an array of entries until Prava restructured create-session (breaking
+        // change; our last working call was 3 Aug 2026, this failed on 19 Aug with
+        // `VAL_2001 purchase_context: Expected object, received array`). The entry shape
+        // itself is unchanged — it just moved inside `custom`. The other mode is
+        // `{ quote: true, quote_id }`, which builds the session from a /quote instead.
+        //
+        // NOTE how this error differed from the one recorded elsewhere: a bad field INSIDE
+        // product_details also reports against `purchase_context`, which is why the standing
+        // advice was "don't debug the array shape". The tell is the wording — "Expected
+        // object, received array" is a type complaint about purchase_context itself and
+        // cannot come from a nested field.
+        purchase_context: {
+          custom: [
+            {
+              effective_until_minutes: opts.effectiveUntilMinutes ?? 30,
+              merchant_details: {
+                country_code_iso2: opts.merchantCountry,
+                url: opts.merchantUrl,
+                // TravelGuard24 is the travel-seller of record under the TMC model: it
+                // charges the traveller and settles with the carrier itself.
+                name: opts.merchantName,
+                category_code: '4722',
+                category: 'Travel Agency',
               },
-            ],
-          },
-        ],
+              // Only ONE entry — multi-merchant baskets are not expressible in a session.
+              product_details: [
+                {
+                  quantity: 1,
+                  description: req.description,
+                  // The Duffel PNR. Comes back as `external_product_id`.
+                  product_id: req.productId,
+                  unit_price: req.totalAmount,
+                },
+              ],
+            },
+          ],
+        },
       });
 
       return {
