@@ -72,7 +72,7 @@ export interface InboundChannel {
  * channel implementation cannot accidentally forget it.
  */
 /**
- * Masks a traveller's contact for display: `+61455501234` → `••• 1234`.
+ * Masks a traveller's contact for display: `+61491570156` → `••• 0156`.
  *
  * The full value is needed to send a reply and stays server-side. The browser only ever
  * receives the masked form, so it cannot appear in a screenshot, a screen recording, or a

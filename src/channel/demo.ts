@@ -31,7 +31,10 @@ export function createDemoChannel(): DemoChannel {
     kind: 'demo',
     address: 'demo',
 
-    inject(text, from = '+61455501234') {
+    // ACMA's reserved fictitious mobile range (0491 570 006 - 0491 570 156). Guaranteed
+    // never to be allocated to a real subscriber, so it cannot dial a stranger. Do not
+    // replace with a "more realistic" number - 04xx prefixes are live allocations.
+    inject(text, from = '+61491570156') {
       const req: InboundRequest = {
         id: `demo-${++n}`,
         channel: 'demo',

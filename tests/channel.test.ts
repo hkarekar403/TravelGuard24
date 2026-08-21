@@ -9,11 +9,11 @@ import { maskContact } from '../src/channel/types.js';
  */
 describe('maskContact', () => {
   it('keeps only the last four digits of a phone number', () => {
-    expect(maskContact('+61455501234')).toBe('••• 1234');
+    expect(maskContact('+61491570156')).toBe('••• 0156');
   });
 
   it('masks regardless of formatting', () => {
-    expect(maskContact('+61 455 501 234')).toBe('••• 1234');
+    expect(maskContact('+61 491 570 156')).toBe('••• 0156');
     expect(maskContact('(02) 9876 5432')).toBe('••• 5432');
   });
 
@@ -26,7 +26,7 @@ describe('maskContact', () => {
   });
 
   it('never returns the original for anything phone-shaped', () => {
-    for (const n of ['+61455501234', '0455501234', '+1 415 555 0134']) {
+    for (const n of ['+61491570156', '0491570156', '+1 415 555 0134']) {
       expect(maskContact(n)).not.toBe(n);
       expect(maskContact(n)).not.toContain(n.replace(/\D/g, '').slice(0, 6));
     }

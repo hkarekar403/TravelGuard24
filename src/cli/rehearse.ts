@@ -86,7 +86,7 @@ async function main(): Promise<void> {
         familyName: 'Traveller',
         bornOn: '1990-01-01',
         gender: 'm',
-        phoneNumber: '+61400000000',
+        phoneNumber: '+61491570006',
         email: 'traveler@travelguard24.vercel.app',
       },
       policy,
