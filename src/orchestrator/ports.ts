@@ -77,9 +77,12 @@ export type CreateSessionRequest = {
   /**
    * OPT-IN card pre-selection, empty by default.
    *
-   * Setting this breaks the hosted checkout: the page renders the order and never offers
-   * a card or passkey. Left here because the field is real and may be fixed vendor-side,
-   * but it must stay empty for anything a human has to complete.
+   * An earlier version of this comment claimed it BREAKS the hosted checkout. That was
+   * wrong: a control session sent WITHOUT the card object stalled on the same screen, so the
+   * fault was elsewhere. See `prava/client.ts` for the full correction.
+   *
+   * Pre-selecting is what stops the checkout offering the customer's default card when that
+   * is not the one you want used — which matters as soon as a customer has more than one.
    */
   cardId: string;
 };

@@ -25,7 +25,7 @@ async function main(): Promise<void> {
     baseUrl: config.pravaBaseUrl,
     secretKey: config.pravaSecretKey,
     merchantName: 'TravelGuard24',
-    merchantUrl: 'https://travelguard24-demo.vercel.app',
+    merchantUrl: 'https://travelguard24.vercel.app',
     merchantCountry: 'AU',
   });
 

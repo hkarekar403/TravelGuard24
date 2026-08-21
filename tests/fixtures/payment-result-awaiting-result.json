@@ -10,7 +10,7 @@
         {
           "txn_ref_id": "tli_01KYER880N38ZNZTMH9PA2A9TW",
           "merchant_name": "TravelGuard24",
-          "merchant_url": "https://travelguard24-demo.vercel.app",
+          "merchant_url": "https://travelguard24.vercel.app",
           "total_amount": "1202.75",
           "status": "credentials_generated",
           "token": "4111111111111111",

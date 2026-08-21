@@ -287,7 +287,7 @@ otherwise** — a deployment that needs a public interface sets `HOST` explicitl
 connects inward" stays true of every instance that has not opted out.
 
 ```bash
-npm test           # 174 tests
+npm test           # 174 tests (1 skips without the full capture)
 npm run typecheck
 ```
 

@@ -49,7 +49,7 @@ async function main(): Promise<void> {
     baseUrl: config.pravaBaseUrl,
     secretKey: config.pravaSecretKey,
     merchantName: 'TravelGuard24',
-    merchantUrl: 'https://travelguard24-demo.vercel.app',
+    merchantUrl: 'https://travelguard24.vercel.app',
     merchantCountry: 'AU',
   });
 
@@ -82,16 +82,16 @@ async function main(): Promise<void> {
       },
       passenger: {
         title: 'mr',
-        givenName: 'Harshad',
-        familyName: 'Karekar',
-        bornOn: '1995-03-14',
+        givenName: 'Test',
+        familyName: 'Traveller',
+        bornOn: '1990-01-01',
         gender: 'm',
         phoneNumber: '+61400000000',
-        email: 'traveler@travelguard24-demo.vercel.app',
+        email: 'traveler@travelguard24.vercel.app',
       },
       policy,
       userId: 'test_user_002',
-      userEmail: 'traveler@travelguard24-demo.vercel.app',
+      userEmail: 'traveler@travelguard24.vercel.app',
       // Deliberately empty — see the note in prava/client.ts. Pre-selection stalls
       // the hosted checkout at the order summary with no way to proceed.
       cardId: '',

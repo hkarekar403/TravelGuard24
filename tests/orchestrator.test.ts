@@ -117,7 +117,7 @@ const credential: PaymentCredential = {
   txnRefId: 'tli_test',
   productRefId: 'prd_test',
   merchantName: 'TravelGuard24',
-  merchantUrl: 'https://travelguard24-demo.vercel.app',
+  merchantUrl: 'https://travelguard24.vercel.app',
   totalAmount: OFFER_PRICE,
   // Synthetic. Real sandbox tokens and CVVs stay in the gitignored captures.
   token: '4111111111111111',
@@ -278,14 +278,14 @@ function harness(o: Overrides = {}) {
       title: 'mr',
       givenName: 'Test',
       familyName: 'Traveller',
-      bornOn: '1995-03-14',
+      bornOn: '1990-01-01',
       gender: 'm',
       phoneNumber: '+61400000000',
-      email: 'traveler@travelguard24-demo.vercel.app',
+      email: 'traveler@travelguard24.vercel.app',
     },
     policy,
     userId: 'test_user_002',
-    userEmail: 'traveler@travelguard24-demo.vercel.app',
+    userEmail: 'traveler@travelguard24.vercel.app',
     cardId: 'card_test',
   };
 

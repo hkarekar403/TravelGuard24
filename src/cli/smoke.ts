@@ -30,7 +30,7 @@ async function main(): Promise<void> {
     baseUrl: config.pravaBaseUrl,
     secretKey: config.pravaSecretKey,
     merchantName: 'TravelGuard24',
-    merchantUrl: 'https://travelguard24-demo.vercel.app',
+    merchantUrl: 'https://travelguard24.vercel.app',
     merchantCountry: 'AU',
   });
 
@@ -79,12 +79,12 @@ async function main(): Promise<void> {
         refreshed.id,
         {
           title: 'mr',
-          givenName: 'Harshad',
-          familyName: 'Karekar',
-          bornOn: '1995-03-14',
+          givenName: 'Test',
+          familyName: 'Traveller',
+          bornOn: '1990-01-01',
           gender: 'm',
           phoneNumber: '+61400000000',
-          email: 'traveler@travelguard24-demo.vercel.app',
+          email: 'traveler@travelguard24.vercel.app',
         },
         { internal_booking_ref: 'TG24-SMOKE', policy_decision_id: 'smoke' },
       );
@@ -109,7 +109,7 @@ async function main(): Promise<void> {
     productId: order.bookingReference,
     description: `Flight SYD-LHR return, economy, PNR ${order.bookingReference}`,
     userId: 'test_user_002',
-    userEmail: 'traveler@travelguard24-demo.vercel.app',
+    userEmail: 'traveler@travelguard24.vercel.app',
     cardId: '',
   });
   console.log(`   ${session.sessionId} in ${ms(t)}`);

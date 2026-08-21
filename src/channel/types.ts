@@ -51,7 +51,7 @@ export type ChannelKind = 'demo' | 'imessage' | 'email';
 
 export interface InboundChannel {
   readonly kind: ChannelKind;
-  /** Human-readable identity of the receiving endpoint, e.g. "+16462717006". */
+  /** Human-readable identity of the receiving endpoint, e.g. "+12125550100". */
   readonly address: string;
   /**
    * Requests that have arrived since the last call.
@@ -72,7 +72,7 @@ export interface InboundChannel {
  * channel implementation cannot accidentally forget it.
  */
 /**
- * Masks a traveller's contact for display: `+61466910292` → `••• 0292`.
+ * Masks a traveller's contact for display: `+61455501234` → `••• 1234`.
  *
  * The full value is needed to send a reply and stays server-side. The browser only ever
  * receives the masked form, so it cannot appear in a screenshot, a screen recording, or a

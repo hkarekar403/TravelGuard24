@@ -282,6 +282,12 @@ Policy: cap `130000`, cabins `["economy"]`, `minAdvanceDays: 14`, allowlist
 Offers are pre-filtered to the **hold-eligible** ones (see "Discovery filter" below) before the
 funnel is computed.
 
+> **Note on the captures below.** `logs/` is excluded from this repository — the full Duffel
+> response is 173 MB unzipped, and the raw captures are unredacted API traffic. The trimmed
+> fixtures in `tests/fixtures/` reproduce the same selection and are committed; the test that
+> asserts against the full capture skips automatically when it is absent, so `npm test` passes
+> on a fresh clone.
+
 ### APPROVED — `logs/duffel/01-offer_requests-POST.full.json.zip` (1,669 offers)
 
 ```

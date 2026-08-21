@@ -31,7 +31,7 @@ export function createDemoChannel(): DemoChannel {
     kind: 'demo',
     address: 'demo',
 
-    inject(text, from = '+61466910292') {
+    inject(text, from = '+61455501234') {
       const req: InboundRequest = {
         id: `demo-${++n}`,
         channel: 'demo',
